@@ -1,0 +1,35 @@
+exclude = [
+    "__init__.py",
+    "__pycache__/"
+    ]
+
+[lint]
+select = [
+    # Check style of docstring
+    "D",
+    # Check import order
+    "I",
+    # Check pep8 naming
+    "N"
+    ]
+extend-select = [
+    # The summary line should be right after start of docstring
+    "D212",
+    # No function signature in summary line
+    "D402",
+    # A blank line should be after the last section
+    "D413",
+    # All parameters should be documented
+    "D417",
+    ]
+ignore = [
+    # Module documentation should be in the README.md
+    "D100"
+    ]
+
+[lint.pydocstyle]
+convention = "numpy"
+
+[format]
+quote-style = "double"
+indent-style = "space"

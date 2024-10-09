@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "netargparse"
+version = "0.1.0"
+description = ""
+authors = ["Kevin Golob <151143873+kvnglb@users.noreply.github.com>"]
+readme = "README.md"
+license = "BSD-3-Clause"
+packages = [{include = "netargparse", from = "src"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed"
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+flask = {version = "^3", optional = true}
+
+[tool.poetry.extras]
+http = ["flask"]
+
+[tool.poetry.group.dev.dependencies]
+spyder-kernels = "~2.5"
+requests = "^2.32.3"
+mypy = "^1.11.2"
+flake8 = "^7.1.1"
+ruff = "^0.6.8"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

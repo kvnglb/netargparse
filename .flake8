@@ -1,0 +1,12 @@
+[flake8]
+exclude =
+    __init__.py,
+    __pycache__/
+
+ignore =
+    # Limit chars per line is obsolete
+    E501,
+    # Whitespace around arithmetic operators does not always look better
+    E226,
+    # Line breaks should be before binary operator (conflict: W503)
+    W504
