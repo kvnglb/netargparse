@@ -1,0 +1,58 @@
+name: Lint and test
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.1
+    - uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.9"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --all-extras
+
+    - name: Ruff
+      run: poetry run ruff check src/
+
+    - name: Flake8
+      run: poetry run flake8 src/
+
+    - name: Mypy
+      run: poetry run mypy src/
+
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4.2.1
+    - uses: actions/setup-python@v5.2.0
+      with:
+        python-version: ${{ matrix.version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --all-extras
+
+    - name: Run tests
+      run: poetry run python tests/test_netargparse.py

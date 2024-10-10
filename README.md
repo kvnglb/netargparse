@@ -72,3 +72,22 @@ optional arguments:
   -p PORT, --port PORT  Port number where NetArgumentParser listens.
   --http                Use http get requests instead of plain tcp messages (requires flask).
 ```
+
+# Installation
+For a minimal installation, where only plain TCP messages are used for communication, run
+```
+pip install netargparse
+```
+No additional libraries will be installed. All libraries used are part of [The Python Standard Library](https://docs.python.org/3/library/index.html).
+
+If HTTP requests are to be used, run
+```
+pip install netargparse[http]
+```
+This will also install [flask](https://pypi.org/project/Flask/).
+
+# Documentation
+More documentation can be found in [docs](https://github.com/kvnglb/netargparse/tree/main/docs).
+
+# TODO
+- Windows support

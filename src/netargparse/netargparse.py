@@ -48,9 +48,9 @@ class NetArgumentParser:
         self.parser = subparser.add_parser("main")
 
     def __call__(self, func: t.Callable,
-            autoformat: bool = True,
-            resp_delay: t.Union[int, float] = 0,
-            parse_args: t.Union[None, t.List[str]] = None) -> None:
+                 autoformat: bool = True,
+                 resp_delay: t.Union[int, float] = 0,
+                 parse_args: t.Union[None, t.List[str]] = None) -> None:
         """Run the function `func` either directly from the cli or with nap.
 
         The function `func` is either executed directly or runs as tcp server
