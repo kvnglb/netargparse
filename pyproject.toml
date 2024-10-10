@@ -1,10 +1,13 @@
 [tool.poetry]
 name = "netargparse"
-version = "0.1.0"
+version = "0.1.1"
 description = "Enhance ArgumentParser with a TCP-based API for argument handling."
 authors = ["Kevin Golob <151143873+kvnglb@users.noreply.github.com>"]
 readme = "README.md"
 license = "BSD-3-Clause"
+homepage = "https://github.com/kvnglb/netargparse"
+repository = "https://github.com/kvnglb/netargparse"
+documentation = "https://github.com/kvnglb/netargparse/tree/main/docs"
 packages = [{include = "netargparse", from = "src"}]
 classifiers = [
     "Development Status :: 4 - Beta",
