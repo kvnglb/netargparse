@@ -88,6 +88,3 @@ This will also install [flask](https://pypi.org/project/Flask/).
 
 # Documentation
 More documentation can be found in [docs](https://github.com/kvnglb/netargparse/tree/main/docs).
-
-# TODO
-- Windows support

@@ -134,26 +134,20 @@ class HttpServer:
 
     Attributes
     ----------
-    p_get_r : multiprocessing.connection.Connection
-        The ending of the pipe, that receives the message received by the client
-        from the flask daemon process.
-    p_get_s : multiprocessing.connection.Connection
-        The ending of the pipe, that sends the message received by the client
-        to the main process.
-    p_send_r : multiprocessing.connection.Connection
-        The ending of the pipe, that receives the message from `NetArgumentParser`
-        from the main process.
-    p_send_s : multiprocessing.connection.Connection
-        The ending of the pipe, that sends the message from `NetArgumentParser`
-        to the flask daemon process.
+    q_get : queue.Queue
+        The queue, that sends and receives the message received by the client
+        from the flask daemon thread to the main thread.
+    q_send : queue.Queue
+        The queue, that sends and receives the message from `NetArgumentParser`
+        from the main thread to the flask daemon thread.
 
     """
 
     def __init__(self, ip: str, port: int) -> None:
-        """Initialize flask as daemon process to accept http get requests.
+        """Initialize flask as daemon thread to accept http get requests.
 
-        Flask is started as daemon process and the url parameters are sent
-        to the main process through pipes for converting them into the argument
+        Flask is started as daemon thread and the url parameters are sent
+        to the main thread through queues for converting them into the argument
         string, that is needed for the main `parser`.
 
         Parameters
@@ -164,16 +158,16 @@ class HttpServer:
             The port, where the socket should listen.
 
         """
-        from multiprocessing import Pipe, Process
-        from multiprocessing.connection import Connection
+        from queue import Queue
+        from threading import Thread
 
         import flask
 
-        self.p_get_r, self.p_get_s = Pipe(False)
-        self.p_send_r, self.p_send_s = Pipe(False)
+        self.q_get = Queue(maxsize=1)  # type: Queue
+        self.q_send = Queue(maxsize=1)  # type: Queue
 
-        def serve(p_get_s: Connection, p_send_r: Connection) -> None:
-            """Daemon process, that is running flask."""
+        def serve(q_get: Queue, q_send: Queue) -> None:
+            """Daemon thread, that is running flask."""
             app = flask.Flask(__name__)
 
             def msg_handler(autoformat: bool, response: t.Union[dict, str],
@@ -212,8 +206,8 @@ class HttpServer:
             def http_get() -> flask.wrappers.Response:
                 """Route for json response."""
                 d = dict(flask.request.args)
-                p_get_s.send(d)
-                r = p_send_r.recv()  # type: tuple[t.Any, t.Any, t.Any]
+                q_get.put(d)
+                r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
                 return flask.Response(msg_handler(*r, MessageJson),
                                       mimetype="application/json")
 
@@ -221,28 +215,28 @@ class HttpServer:
             def http_get_xml() -> flask.wrappers.Response:
                 """Route for xml response."""
                 d = dict(flask.request.args)
-                p_get_s.send(d)
-                r = p_send_r.recv()  # type: tuple[t.Any, t.Any, t.Any]
+                q_get.put(d)
+                r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
                 return flask.Response(msg_handler(*r, MessageXml),
                                       mimetype="application/xml")
 
             app.run(ip, port)
 
-        proc_serve = Process(target=serve, args=(self.p_get_s, self.p_send_r), daemon=True)
-        proc_serve.start()
+        thrd_serve = Thread(target=serve, args=(self.q_get, self.q_send), daemon=True)
+        thrd_serve.start()
 
     def get_msg(self) -> str:
         """Receive the message that was sent from the client to the http server.
 
-        Receive the message as dict from the daemon process via the pipe and return
-        the corresponding argument string for the main `parser`.
+        Receive the message as dict from the daemon thread via the queue and
+        return the corresponding argument string for the main `parser`.
 
         Returns
         -------
         Argument string for main `parser`.
 
         """
-        d = self.p_get_r.recv()
+        d = self.q_get.get()
         return Message.dict_to_argstring(d)
 
     def send_msg(self, autoformat: bool, response: t.Union[dict, str],
@@ -265,6 +259,6 @@ class HttpServer:
 
         """
         try:
-            self.p_send_s.send((autoformat, response, exception))
+            self.q_send.put((autoformat, response, exception))
         except Exception as e:
             print(e)

@@ -11,6 +11,8 @@ from netargparse import NetArgumentParser
 
 def tcp_socket_no_autoformat():
     def main(args):
+        if args.var_str == "damn":
+            return args.var_int / 0
         return f'"{args}"'
 
     nap = NetArgumentParser()
@@ -21,6 +23,8 @@ def tcp_socket_no_autoformat():
 
 def tcp_socket_autoformat():
     def main(args):
+        if args.var_str == "damn":
+            return args.var_int / 0
         return vars(args)
 
     nap = NetArgumentParser()
@@ -31,6 +35,8 @@ def tcp_socket_autoformat():
 
 def http_no_autoformat():
     def main(args):
+        if args.var_str == "damn":
+            return args.var_int / 0
         return f'"{args}"'
 
     nap = NetArgumentParser()
@@ -41,6 +47,8 @@ def http_no_autoformat():
 
 def http_autoformat():
     def main(args):
+        if args.var_str == "damn":
+            return args.var_int / 0
         return vars(args)
 
     nap = NetArgumentParser()
@@ -82,6 +90,7 @@ class TestNetArgumentParser(unittest.TestCase):
         except Exception as e:
             self.fail(e)
 
+    # Plain xml, no autoformat
     def test_plain_xml_na_valid_tx(self):
         ans = s_tcp_na.txrx(b"<nap><__var_str>value</__var_str><__var_int>2</__var_int></nap>")
         self.assertEqual(ans, b"<nap><response>\"Namespace(var_str='value', var_int=2, var_true=False, _cmd='nap')\"</response><exception></exception><finished>1</finished></nap>")
@@ -97,6 +106,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b"<nap><response></response><exception>argument --var_int: invalid int value: '2.2'</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_plain_xml_na_func_exc(self):
+        ans = s_tcp_na.txrx(b"<nap><__var_str>damn</__var_str><__var_int>5</__var_int></nap>")
+        self.assertEqual(ans, b"<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    # Plain json, no autoformat
     def test_plain_json_na_valid_tx(self):
         ans = s_tcp_na.txrx(b'{"--var_str": "value", "--var_int": "2"}')
         self.assertEqual(ans, b'{"response": "Namespace(var_str=\'value\', var_int=2, var_true=False, _cmd=\'nap\')", "exception": "", "finished": 1}')
@@ -112,6 +127,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b'{"response": "", "exception": "argument --var_int: invalid int value: \'2.2\'", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_plain_json_na_func_exc(self):
+        ans = s_tcp_na.txrx(b'{"--var_str": "damn", "--var_int": "5"}')
+        self.assertEqual(ans, b'{"response": "", "exception": "division by zero", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    # Plain xml, autoformat
     def test_plain_xml_a_valid_tx(self):
         ans = s_tcp_a.txrx(b"<nap><__var_str>value</__var_str><__var_int>2</__var_int></nap>")
         self.assertEqual(ans, b"<nap><response><var_str>value</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
@@ -127,6 +148,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b"<nap><response></response><exception>argument --var_int: invalid int value: '2.2'</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_plain_xml_a_func_exc(self):
+        ans = s_tcp_a.txrx(b"<nap><__var_str>damn</__var_str><__var_int>5</__var_int></nap>")
+        self.assertEqual(ans, b"<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    # Plain json, autoformat
     def test_plain_json_a_valid_tx(self):
         ans = s_tcp_a.txrx(b'{"--var_str": "value", "--var_int": "2"}')
         self.assertEqual(ans, b'{"response": {"var_str": "value", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
@@ -142,6 +169,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b'{"response": "", "exception": "argument --var_int: invalid int value: \'2.2\'", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_plain_json_a_func_exc(self):
+        ans = s_tcp_a.txrx(b'{"--var_str": "damn", "--var_int": "5"}')
+        self.assertEqual(ans, b'{"response": "", "exception": "division by zero", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    # HTTP, json resp, no autoformat
     def test_http_json_na_valid_tx(self):
         ans = s_http_na.txrx("/?--var_str=value&--var_int=2")
         self.assertEqual(ans, '{"response": "Namespace(var_str=\'value\', var_int=2, var_true=False, _cmd=\'nap\')", "exception": "", "finished": 1}')
@@ -157,6 +190,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, '{"response": "", "exception": "argument --var_int: invalid int value: \'2.2\'", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_http_json_na_func_exc(self):
+        ans = s_http_na.txrx("/?--var_str=damn&--var_int=5")
+        self.assertEqual(ans, '{"response": "", "exception": "division by zero", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    # HTTP, xml resp, no autoformat
     def test_http_xml_na_valid_tx(self):
         ans = s_http_na.txrx("/xml?--var_str=value&--var_int=2")
         self.assertEqual(ans, "<nap><response>\"Namespace(var_str='value', var_int=2, var_true=False, _cmd='nap')\"</response><exception></exception><finished>1</finished></nap>")
@@ -172,6 +211,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, "<nap><response></response><exception>argument --var_int: invalid int value: '2.2'</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_http_xml_na_func_exc(self):
+        ans = s_http_na.txrx("/xml?--var_str=damn&--var_int=5")
+        self.assertEqual(ans, "<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    # HTTP, json resp, autoformat
     def test_http_json_a_valid_tx(self):
         ans = s_http_a.txrx("/?--var_str=value&--var_int=2")
         self.assertEqual(ans, '{"response": {"var_str": "value", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
@@ -187,6 +232,12 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, '{"response": "", "exception": "argument --var_int: invalid int value: \'2.2\'", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_http_json_a_func_exc(self):
+        ans = s_http_a.txrx("/?--var_str=damn&--var_int=5")
+        self.assertEqual(ans, '{"response": "", "exception": "division by zero", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    # HTTP, xml resp, autoformat
     def test_http_xml_a_valid_tx(self):
         ans = s_http_a.txrx("/xml?--var_str=value&--var_int=2")
         self.assertEqual(ans, "<nap><response><var_str>value</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
@@ -200,6 +251,11 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_http_xml_a_invalid_int(self):
         ans = s_http_a.txrx("/xml?--var_str=value&--var_int=2.2")
         self.assertEqual(ans, "<nap><response></response><exception>argument --var_int: invalid int value: '2.2'</exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    def test_http_xml_a_func_exc(self):
+        ans = s_http_a.txrx("/xml?--var_str=damn&--var_int=5")
+        self.assertEqual(ans, "<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
 

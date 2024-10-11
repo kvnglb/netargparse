@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "netargparse"
-version = "0.1.1"
+version = "0.1.2"
 description = "Enhance ArgumentParser with a TCP-based API for argument handling."
 authors = ["Kevin Golob <151143873+kvnglb@users.noreply.github.com>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "License :: OSI Approved :: BSD License",
-    "Operating System :: POSIX :: Linux",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
     "Typing :: Typed"
 ]
