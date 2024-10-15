@@ -56,21 +56,9 @@ $ python minimal.py nap --port 7000 --http
 ```
 It is then possible to run the main function of the script by sending an HTTP get request with url parameters as arguments.
 
-For example visit http://localhost:7000/?&-x=5 with a browser and receive the script's return as json.
+For example visit http://localhost:7000/?-x=5 with a browser and receive the script's return as json.
 ```
 {"response": 6, "exception": "", "finished": 1}
-```
-
-The following arguments are accepted for the `nap` mode
-```
-$ python minimal.py nap --help
-usage: minimal.py nap [-h] [-i IP] -p PORT [--http]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i IP, --ip IP        IP address where NetArgumentParser listens. Default is localhost.
-  -p PORT, --port PORT  Port number where NetArgumentParser listens.
-  --http                Use http get requests instead of plain tcp messages (requires flask).
 ```
 
 # Installation
