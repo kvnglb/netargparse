@@ -115,3 +115,15 @@ The Python script that uses the NetArgumentParser must follow these rules:
 4)  The script using NetArgumentParser must not have arguments with leading underscore.
 
     NetArgumentParser replaces leading underscores in receiving xml messages with dashes, e.g. `__x=5` will become `--x=5`. This is because `<nap><--x>5</--x></nap>` is invalid xml syntax but `<nap><__x>5</__x></nap>` is valid. So to pass the argument `--x=5` with xml, a substitution of the leading dashes is required. If the script really needs the argument `-_x=5`... Just don't, because sending `<nap><-_x>5</-_x></nap>` is not possible and `<nap><__x>5</__x></nap>` will result in `--x=5`.
+
+5) Arguments with `nargs="+"` and/or `action="append"` are handled as shown in the table below. Examples can be found in [examples/nargs_append](examples/nargs_append).
+
+   |main \ nap|url parameters|json|xml|
+   |--|--|--|--|
+   |`-x 1 2 3`|`?-x=1 2 3`|`{"-x": "1 2 3"}`|`<nap><_x>1 2 3</_x></nap>`|
+   |`-x 1 -x 2 -x 3`|`?-x=1&-x=2&-x=3`|`{"-x": [1, 2, 3]}`|`<nap><_x>1</_x><_x>2</_x><_x>3</_x></nap>`|
+   |`-x 1 2 3 -x 11 22 33 -x 111 222 333`|`?-x=1 2 3&-x=11 22 33&-x=111 222 333`|`{"-x": ["1 2 3", "11 22 33", "111 222 333"]}`|`<nap><_x>1 2 3</_x><_x>11 22 33</_x><_x>111 222 333</_x></nap>`|
+
+   NOTE:
+     - Having the same tag multiple times in xml is fine, but having two identical keys in json will drop the first entry. So `{"a": 1, "a": 2}'` will result in `{'a': 2}`.
+     - Depending on the software that sends the HTTP request with the url parameters, the special characters may need to be replaced, e.g. whitespace with `%20`. So `?-x=1 2 3` will become `?-x=1%202%203`.

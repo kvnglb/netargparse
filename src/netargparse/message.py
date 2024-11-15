@@ -88,7 +88,14 @@ class Message:
             dash = "-" * (len(key) - len(k))
             k = dash + k
             if value:
-                lst.append(f"{k} {value}")
+                if type(value) is list:
+                    for val in value:
+                        if val:
+                            lst.append(f"{k} {val}")
+                        else:
+                            lst.append(k)
+                else:
+                    lst.append(f"{k} {value}")
             else:
                 lst.append(k)
         return " ".join(lst)
@@ -121,9 +128,15 @@ class MessageXml:
         if root.tag != "nap":
             raise Exception("Root must be named `nap`. Message must be in `<nap>...</nap>`.")
 
-        ret = {}
+        ret = {}  # type: t.Dict[t.Any, t.Any]
         for child in root:
-            ret[child.tag] = child.text
+            if child.tag in ret:
+                if type(ret[child.tag]) is not list:
+                    ret[child.tag] = [ret[child.tag], child.text]
+                else:
+                    ret[child.tag].append(child.text)
+            else:
+                ret[child.tag] = child.text
         return ret
 
     @staticmethod

@@ -205,8 +205,7 @@ class HttpServer:
             @app.route("/")
             def http_get() -> flask.wrappers.Response:
                 """Route for json response."""
-                d = dict(flask.request.args)
-                q_get.put(d)
+                q_get.put(flask.request.args)
                 r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
                 return flask.Response(msg_handler(*r, MessageJson),
                                       mimetype="application/json")
@@ -214,8 +213,7 @@ class HttpServer:
             @app.route("/xml")
             def http_get_xml() -> flask.wrappers.Response:
                 """Route for xml response."""
-                d = dict(flask.request.args)
-                q_get.put(d)
+                q_get.put(flask.request.args)
                 r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
                 return flask.Response(msg_handler(*r, MessageXml),
                                       mimetype="application/xml")
@@ -237,7 +235,7 @@ class HttpServer:
 
         """
         d = self.q_get.get()
-        return Message.dict_to_argstring(d)
+        return Message.dict_to_argstring(d.to_dict(flat=False))
 
     def send_msg(self, autoformat: bool, response: t.Union[dict, str],
                  exception: str) -> None:
