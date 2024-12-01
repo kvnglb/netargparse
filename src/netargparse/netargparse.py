@@ -94,7 +94,8 @@ class NetArgumentParser:
                 args_s = server.get_msg()
                 if args_s is False:  # can also be `""`, so no `not args_s`
                     continue
-                args_d = self.parser.parse_args(args_s.split(" "))
+                args_l = [] if args_s == "" else args_s.split(" ")
+                args_d = self.parser.parse_args(args_l)
                 args_d._cmd = "nap"
                 ans = func(args_d)
             except Exception as e:

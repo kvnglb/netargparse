@@ -43,6 +43,13 @@ def tcp_socket_autoformat_nargs_append():
     nap.parser.add_argument("-z", type=int, nargs="+", action="append")
     nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7002"])
 
+def tcp_socket_no_args():
+    def main(args):
+        return {"a": 1}
+
+    nap = NetArgumentParser()
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7003"])
+
 def http_no_autoformat():
     def main(args):
         if args.var_str == "damn":
@@ -53,7 +60,7 @@ def http_no_autoformat():
     nap.parser.add_argument("--var_str", type=str)
     nap.parser.add_argument("--var_int", type=int)
     nap.parser.add_argument("--var_true", action="store_true")
-    nap(main, False, 0.2, ["nap", "--port", "7003", "--http"])
+    nap(main, False, 0.2, ["nap", "--port", "7004", "--http"])
 
 def http_autoformat():
     def main(args):
@@ -65,7 +72,7 @@ def http_autoformat():
     nap.parser.add_argument("--var_str", type=str)
     nap.parser.add_argument("--var_int", type=int)
     nap.parser.add_argument("--var_true", action="store_true")
-    nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7004", "--http"])
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7005", "--http"])
 
 def http_autoformat_nargs_append():
     def main(args):
@@ -75,7 +82,14 @@ def http_autoformat_nargs_append():
     nap.parser.add_argument("-x", type=int, nargs="+")
     nap.parser.add_argument("-y", type=int, action="append")
     nap.parser.add_argument("-z", type=int, nargs="+", action="append")
-    nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7005", "--http"])
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7006", "--http"])
+
+def http_no_args():
+    def main(args):
+        return {"a": 1}
+
+    nap = NetArgumentParser()
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", "7007", "--http"])
 
 
 class TcpSocketRequest:
@@ -188,6 +202,11 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b"<nap><response></response><exception>unrecognized arguments: 2 22 222</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_plain_xml_a_no_arguments(self):
+        ans = s_tcp_a_no_args.txrx(b"<nap></nap>")
+        self.assertEqual(ans, b"<nap><response><a>1</a></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
     # Plain json, autoformat
     def test_plain_json_a_valid_tx(self):
         ans = s_tcp_a.txrx(b'{"--var_str": "value", "--var_int": "2"}')
@@ -227,6 +246,11 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_plain_json_invalid_a_narap(self):
         ans = s_tcp_a_narap.txrx(b'{"-x": ["1 2 3", "11 22 33"], "-y": ["1 2", "11 22"], "-z": ["1 2 3", "11 22 33"]}')
         self.assertEqual(ans, b'{"response": "", "exception": "unrecognized arguments: 2 22", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    def test_plain_json_a_no_arguments(self):
+        ans = s_tcp_a_no_args.txrx(b'{}')
+        self.assertEqual(ans, b'{"response": {"a": 1}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     # HTTP, json resp, no autoformat
@@ -307,6 +331,11 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, '{"response": "", "exception": "unrecognized arguments: 2 22", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_http_json_a_no_arguments(self):
+        ans = s_http_a_no_args.txrx("/")
+        self.assertEqual(ans, '{"response": {"a": 1}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
     # HTTP, xml resp, autoformat
     def test_http_xml_a_valid_tx(self):
         ans = s_http_a.txrx("/xml?--var_str=value&--var_int=2")
@@ -328,10 +357,15 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, "<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_http_xml_a_no_arguments(self):
+        ans = s_http_a_no_args.txrx("/xml")
+        self.assertEqual(ans, "<nap><response><a>1</a></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
 
 if __name__ == "__main__":
-    for t in [tcp_socket_no_autoformat, tcp_socket_autoformat, tcp_socket_autoformat_nargs_append,
-              http_no_autoformat, http_autoformat, http_autoformat_nargs_append]:
+    for t in [tcp_socket_no_autoformat, tcp_socket_autoformat, tcp_socket_autoformat_nargs_append, tcp_socket_no_args,
+              http_no_autoformat, http_autoformat, http_autoformat_nargs_append, http_no_args]:
         Thread(target=t, daemon=True).start()
 
     for i in range(10):
@@ -344,12 +378,16 @@ if __name__ == "__main__":
                 s_tcp_a = TcpSocketRequest(7001)
             if not "s_tcp_a_narap" in globals():
                 s_tcp_a_narap = TcpSocketRequest(7002)
+            if not "s_tcp_a_no_args" in globals():
+                s_tcp_a_no_args = TcpSocketRequest(7003)
             if not "s_http_na" in globals():
-                s_http_na = HttpRequest(7003)
+                s_http_na = HttpRequest(7004)
             if not "s_http_a" in globals():
-                s_http_a = HttpRequest(7004)
+                s_http_a = HttpRequest(7005)
             if not "s_http_a_narap" in globals():
-                s_http_a_narap = HttpRequest(7005)
+                s_http_a_narap = HttpRequest(7006)
+            if not "s_http_a_no_args" in globals():
+                s_http_a_no_args = HttpRequest(7007)
             break
         except (ConnectionRefusedError, requests.exceptions.ConnectionError):
             time.sleep(1)
