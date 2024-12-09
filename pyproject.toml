@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "netargparse"
-version = "0.1.4"
+version = "0.1.5"
 description = "Enhance ArgumentParser with a TCP-based API for argument handling."
 authors = ["Kevin Golob <151143873+kvnglb@users.noreply.github.com>"]
 readme = "README.md"
@@ -20,10 +20,6 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-flask = {version = "^3", optional = true}
-
-[tool.poetry.extras]
-http = ["flask"]
 
 [tool.poetry.group.dev.dependencies]
 spyder-kernels = "~2.5"
