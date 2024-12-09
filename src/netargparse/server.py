@@ -2,7 +2,7 @@ import http.server
 import io
 import socket
 import typing as t
-import urllib
+import urllib.parse
 from queue import Queue
 from threading import Thread
 
