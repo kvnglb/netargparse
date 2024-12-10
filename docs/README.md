@@ -5,9 +5,9 @@ The script using NetArgumentParser can be run in two modes
 - API (also called nap): `python <file> nap [-h] [-i IP] -p PORT [--http]` with
   ```
   -h, --help            show this help message and exit
-  -i IP, --ip IP        IP address where NetArgumentParser listens. Default is localhost.
+  -i IP, --ip IP        IP address where NetArgumentParser listens. Default is 127.0.0.1.
   -p PORT, --port PORT  Port number where NetArgumentParser listens.
-  --http                Use http get requests instead of plain tcp messages (requires flask).
+  --http                Use http get requests instead of plain tcp messages.
   ```
   The script starts listening on a port and waits for a TCP connection to be established. Then, the arguments for the script can be sent either with an HTTP get request or a plain TCP message.
 

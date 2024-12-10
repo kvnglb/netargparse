@@ -39,11 +39,11 @@ class NetArgumentParser:
 
         nap_parser = subparser.add_parser("nap")
         nap_parser.add_argument("-i", "--ip", type=str, required=False, default="127.0.0.1",
-                                help="IP address where NetArgumentParser listens. Default is localhost.")
+                                help="IP address where NetArgumentParser listens. Default is 127.0.0.1.")
         nap_parser.add_argument("-p", "--port", type=int, required=True,
                                 help="Port number where NetArgumentParser listens.")
         nap_parser.add_argument("--http", action="store_true",
-                                help="Use http get requests instead of plain tcp messages (requires flask).")
+                                help="Use http get requests instead of plain tcp messages.")
 
         self.parser = subparser.add_parser("main")
 

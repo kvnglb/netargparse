@@ -1,6 +1,10 @@
+import http.server
 import io
 import socket
 import typing as t
+import urllib.parse
+from queue import Queue
+from threading import Thread
 
 from .message import Message, MessageJson, MessageXml
 
@@ -136,40 +140,33 @@ class HttpServer:
     ----------
     q_get : queue.Queue
         The queue, that sends and receives the message received by the client
-        from the flask daemon thread to the main thread.
+        from the http.server daemon thread to the main thread.
     q_send : queue.Queue
         The queue, that sends and receives the message from `NetArgumentParser`
-        from the main thread to the flask daemon thread.
+        from the main thread to the http.server daemon thread.
 
     """
 
     def __init__(self, ip: str, port: int) -> None:
-        """Initialize flask as daemon thread to accept http get requests.
+        """Initialize http.server as daemon thread to accept http get requests.
 
-        Flask is started as daemon thread and the url parameters are sent
+        http.server is started as daemon thread and the url parameters are sent
         to the main thread through queues for converting them into the argument
         string, that is needed for the main `parser`.
 
         Parameters
         ----------
         ip
-            The ip address, where the flask should listen.
+            The ip address, where http.server should listen.
         port
             The port, where the socket should listen.
 
         """
-        from queue import Queue
-        from threading import Thread
-
-        import flask
-
         self.q_get = Queue(maxsize=1)  # type: Queue
         self.q_send = Queue(maxsize=1)  # type: Queue
 
         def serve(q_get: Queue, q_send: Queue) -> None:
-            """Daemon thread, that is running flask."""
-            app = flask.Flask(__name__)
-
+            """Daemon thread, that is running http.server."""
             def msg_handler(autoformat: bool, response: t.Union[dict, str],
                             exception: str,
                             message_method: t.Union[t.Type[MessageJson], t.Type[MessageXml]]) -> bytes:
@@ -202,23 +199,37 @@ class HttpServer:
                 msg = msg_meth._format(autoformat, response, exception)
                 return msg
 
-            @app.route("/")
-            def http_get() -> flask.wrappers.Response:
-                """Route for json response."""
-                q_get.put(flask.request.args)
-                r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
-                return flask.Response(msg_handler(*r, MessageJson),
-                                      mimetype="application/json")
+            class HttpRequestHandler(http.server.BaseHTTPRequestHandler):
+                def do_GET(self) -> None:  # noqa: N802 - is defined by BaseHTTPRequestHandler
+                    full_path = urllib.parse.urlparse(self.path)
+                    path = full_path.path
+                    args = urllib.parse.parse_qs(full_path.query, keep_blank_values=True)
 
-            @app.route("/xml")
-            def http_get_xml() -> flask.wrappers.Response:
-                """Route for xml response."""
-                q_get.put(flask.request.args)
-                r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
-                return flask.Response(msg_handler(*r, MessageXml),
-                                      mimetype="application/xml")
+                    if path == "/" or path == "/xml":
+                        resp_code = 200
+                        q_get.put(args)
+                        r = q_send.get()  # type: tuple[t.Any, t.Any, t.Any]
+                        if path == "/":
+                            content_type = "application/json"
+                            resp = msg_handler(*r, MessageJson)
+                        else:
+                            content_type = "application/xml; charset=utf-8"
+                            resp = msg_handler(*r, MessageXml)
+                    else:
+                        resp_code = 400
+                        resp = "".encode("utf-8")
 
-            app.run(ip, port)
+                    self.send_response(resp_code)
+
+                    if resp_code == 200:
+                        self.send_header("Content-Type", content_type)
+                        self.send_header("Content-Length", str(len(resp)))
+
+                    self.end_headers()
+                    self.wfile.write(resp)
+
+            httpd = http.server.HTTPServer((ip, port), HttpRequestHandler)
+            httpd.serve_forever()
 
         thrd_serve = Thread(target=serve, args=(self.q_get, self.q_send), daemon=True)
         thrd_serve.start()
@@ -235,7 +246,7 @@ class HttpServer:
 
         """
         d = self.q_get.get()
-        return Message.dict_to_argstring(d.to_dict(flat=False))
+        return Message.dict_to_argstring(d)
 
     def send_msg(self, autoformat: bool, response: t.Union[dict, str],
                  exception: str) -> None:
