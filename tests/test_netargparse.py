@@ -187,6 +187,16 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b"<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_plain_xml_a_whitespace_double_quote(self):
+        ans = s_tcp_a.txrx(b"<nap><__var_str>\"hello world\"</__var_str><__var_int>2</__var_int></nap>")
+        self.assertEqual(ans, b"<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    def test_plain_xml_a_whitespace_single_quote(self):
+        ans = s_tcp_a.txrx(b"<nap><__var_str>'hello world'</__var_str><__var_int>2</__var_int></nap>")
+        self.assertEqual(ans, b"<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
     def test_plain_xml_a_narap_two_append(self):
         ans = s_tcp_a_narap.txrx(b"<nap><_x>1 2 3</_x><_x>11 22 33</_x><_y>1</_y><_y>11</_y><_z>1 2 3</_z><_z>11 22 33</_z></nap>")
         self.assertEqual(ans, b"<nap><response><x>[11, 22, 33]</x><y>[1, 11]</y><z>[[1, 2, 3], [11, 22, 33]]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
@@ -226,6 +236,11 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_plain_json_a_func_exc(self):
         ans = s_tcp_a.txrx(b'{"--var_str": "damn", "--var_int": "5"}')
         self.assertEqual(ans, b'{"response": "", "exception": "division by zero", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    def test_plain_json_a_whitespace_single_quote(self):
+        ans = s_tcp_a.txrx(b'{"--var_str": "\'hello world\'", "--var_int": "2"}')
+        self.assertEqual(ans, b'{"response": {"var_str": "hello world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     def test_plain_json_a_narap_two_append(self):
@@ -316,6 +331,16 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, '{"response": "", "exception": "division by zero", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_http_json_a_whitespace_double_quote(self):
+        ans = s_http_a.txrx("/?--var_str=\"hello world\"&--var_int=2")
+        self.assertEqual(ans, '{"response": {"var_str": "hello world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    def test_http_json_a_whitespace_single_quote(self):
+        ans = s_http_a.txrx("/?--var_str='hello world'&--var_int=2")
+        self.assertEqual(ans, '{"response": {"var_str": "hello world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
     def test_http_json_a_narap_two_append(self):
         ans = s_http_a_narap.txrx("/?-x=1 2 3&-x=11 22 33&-y=1&-y=11&-z=1 2 3&-z=11 22 33")
         self.assertEqual(ans, '{"response": {"x": [11, 22, 33], "y": [1, 11], "z": [[1, 2, 3], [11, 22, 33]], "_cmd": "nap"}, "exception": "", "finished": 1}')
@@ -355,6 +380,16 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_http_xml_a_func_exc(self):
         ans = s_http_a.txrx("/xml?--var_str=damn&--var_int=5")
         self.assertEqual(ans, "<nap><response></response><exception>division by zero</exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    def test_http_xml_a_whitespace_double_quote(self):
+        ans = s_http_a.txrx("/xml?--var_str=\"hello world\"&--var_int=2")
+        self.assertEqual(ans, "<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    def test_http_xml_a_whitespace_single_quote(self):
+        ans = s_http_a.txrx("/xml?--var_str='hello world'&--var_int=2")
+        self.assertEqual(ans, "<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
     def test_http_xml_a_no_arguments(self):

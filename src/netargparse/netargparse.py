@@ -91,10 +91,16 @@ class NetArgumentParser:
             exc = ""
 
             try:
-                args_s = server.get_msg()
-                if args_s is False:  # can also be `""`, so no `not args_s`
+                args = server.get_msg()
+                if args is False:  # can also be `[]`, so no `not args_s`
                     continue
-                args_l = [] if args_s == "" else args_s.split(" ")
+                args_l = []
+                for item in args:
+                    val = item.split(" ", 1)
+                    if len(val) == 2 and (val[1].startswith("'") or val[1].startswith('"')):
+                        args_l.extend([val[0], val[1].replace("'", "").replace('"', "")])
+                    else:
+                        args_l.extend(item.split(" "))
                 args_d = self.parser.parse_args(args_l)
                 args_d._cmd = "nap"
                 ans = func(args_d)

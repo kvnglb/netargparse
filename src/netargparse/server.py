@@ -57,7 +57,7 @@ class TcpSocketServer:
         self.connected = False
         return False
 
-    def get_msg(self) -> t.Union[t.Literal[False], str]:
+    def get_msg(self) -> t.Union[t.Literal[False], list]:
         """Receive the message that was sent from the client to the tcp server.
 
         Loop through the received message and wait until the client has sent
@@ -98,7 +98,7 @@ class TcpSocketServer:
         else:
             data_str = data.getvalue().decode("utf-8")
             d = self.msg_meth._to_dict(data_str)
-            return Message.dict_to_argstring(d)
+            return Message.dict_to_argslist(d)
 
     def send_msg(self, autoformat: bool, response: t.Union[dict, str],
                  exception: str) -> None:
@@ -234,7 +234,7 @@ class HttpServer:
         thrd_serve = Thread(target=serve, args=(self.q_get, self.q_send), daemon=True)
         thrd_serve.start()
 
-    def get_msg(self) -> str:
+    def get_msg(self) -> list:
         """Receive the message that was sent from the client to the http server.
 
         Receive the message as dict from the daemon thread via the queue and
@@ -246,7 +246,7 @@ class HttpServer:
 
         """
         d = self.q_get.get()
-        return Message.dict_to_argstring(d)
+        return Message.dict_to_argslist(d)
 
     def send_msg(self, autoformat: bool, response: t.Union[dict, str],
                  exception: str) -> None:

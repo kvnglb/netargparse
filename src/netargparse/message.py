@@ -57,13 +57,13 @@ class Message:
         return getattr(self.msg_meth, name)
 
     @staticmethod
-    def dict_to_argstring(d: dict) -> str:
-        """Convert the dict with the main `parser` arguments into a str.
+    def dict_to_argslist(d: dict) -> list:
+        """Convert the dict with the main `parser` arguments into a list.
 
         The function `parser.parse_args` needs a list as input with the arguments
         as input, but the received message from the client is converted into a
-        dict. So this function converts the dict into a str, that can be splitted
-        at a whitespace character, to get a list with the arguments for the `parser`.
+        dict. So this function converts the dict into a list to get the arguments
+        for the `parser`.
 
         Additionally, clean the arguments. E.g. an argument can be `--x 1`, but
         xml syntax forbids `<--x>1</--x>`. To overcome this, underscore instead
@@ -79,7 +79,7 @@ class Message:
 
         Returns
         -------
-        Clean Arguments for the `main` parser (splittable at whitespace).
+        Clean list with arguments for the `main` parser.
 
         """
         lst = []
@@ -98,7 +98,7 @@ class Message:
                     lst.append(f"{k} {value}")
             else:
                 lst.append(k)
-        return " ".join(lst)
+        return lst
 
 
 class MessageXml:
