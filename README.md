@@ -14,8 +14,7 @@ def add_one(args):
 
 parser = ArgumentParser()
 parser.add_argument("-x", type=int, required=True)
-args = parser.parse_args()
-add_one(args)
+add_one(parser.parse_args())
 ```
 
 and running the script results in
@@ -26,16 +25,16 @@ $ python minimal.py -x 5
 
 Replacing the ArgumentParser with the NetArgumentParser from this library:
 ```
-from netargparse import NetArgumentParser
+from netargparse import NetArgumentParser           # changed
 
 def add_one(args):
     new_number = args.x + 1
     print(new_number)
     return(new_number)
 
-nap = NetArgumentParser()
-nap.parser.add_argument("-x", type=int, required=True)
-nap(add_one)
+parser = NetArgumentParser()                        # changed
+parser.add_argument("-x", type=int, required=True)
+parser(add_one)                                     # changed
 ```
 
 The script can now be run in two modes:
