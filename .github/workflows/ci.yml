@@ -58,3 +58,11 @@ jobs:
 
     - name: Run tests
       run: poetry run python tests/test_netargparse.py
+
+    - name: Run compatibility tests
+      run: |
+        for test in tests/test_netargparse_*.py
+        do
+            echo $test
+            poetry run python "$test"
+        done

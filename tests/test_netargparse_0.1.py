@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ElementTree
 from netargparse import NetArgumentParser
 
 
-port_start = 7000
+port_start = 6000
 
 def tcp_socket_no_autoformat():
     def main(args):
@@ -17,11 +17,11 @@ def tcp_socket_no_autoformat():
             return args.var_int / 0
         return f'"{args}"'
 
-    parser = NetArgumentParser()
-    parser.add_argument("--var_str", type=str)
-    parser.add_argument("--var_int", type=int)
-    parser.add_argument("--var_true", action="store_true")
-    parser(main, False, 0.2, ["nap", "--port", str(port_start)])
+    nap = NetArgumentParser()
+    nap.parser.add_argument("--var_str", type=str)
+    nap.parser.add_argument("--var_int", type=int)
+    nap.parser.add_argument("--var_true", action="store_true")
+    nap(main, False, 0.2, ["nap", "--port", str(port_start)])
 
 def tcp_socket_autoformat():
     def main(args):
@@ -29,28 +29,28 @@ def tcp_socket_autoformat():
             return args.var_int / 0
         return vars(args)
 
-    parser = NetArgumentParser()
-    parser.add_argument("--var_str", type=str)
-    parser.add_argument("--var_int", type=int)
-    parser.add_argument("--var_true", action="store_true")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 1)])
+    nap = NetArgumentParser()
+    nap.parser.add_argument("--var_str", type=str)
+    nap.parser.add_argument("--var_int", type=int)
+    nap.parser.add_argument("--var_true", action="store_true")
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 1)])
 
 def tcp_socket_autoformat_nargs_append():
     def main(args):
         return vars(args)
 
-    parser = NetArgumentParser()
-    parser.add_argument("-x", type=int, nargs="+")
-    parser.add_argument("-y", type=int, action="append")
-    parser.add_argument("-z", type=int, nargs="+", action="append")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 2)])
+    nap = NetArgumentParser()
+    nap.parser.add_argument("-x", type=int, nargs="+")
+    nap.parser.add_argument("-y", type=int, action="append")
+    nap.parser.add_argument("-z", type=int, nargs="+", action="append")
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 2)])
 
 def tcp_socket_no_args():
     def main(args):
         return {"a": 1}
 
-    parser = NetArgumentParser()
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 3)])
+    nap = NetArgumentParser()
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 3)])
 
 def http_no_autoformat():
     def main(args):
@@ -58,11 +58,11 @@ def http_no_autoformat():
             return args.var_int / 0
         return f'"{args}"'
 
-    parser = NetArgumentParser()
-    parser.add_argument("--var_str", type=str)
-    parser.add_argument("--var_int", type=int)
-    parser.add_argument("--var_true", action="store_true")
-    parser(main, False, 0.2, ["nap", "--port", str(port_start + 4), "--http"])
+    nap = NetArgumentParser()
+    nap.parser.add_argument("--var_str", type=str)
+    nap.parser.add_argument("--var_int", type=int)
+    nap.parser.add_argument("--var_true", action="store_true")
+    nap(main, False, 0.2, ["nap", "--port", str(port_start + 4), "--http"])
 
 def http_autoformat():
     def main(args):
@@ -70,28 +70,28 @@ def http_autoformat():
             return args.var_int / 0
         return vars(args)
 
-    parser = NetArgumentParser()
-    parser.add_argument("--var_str", type=str)
-    parser.add_argument("--var_int", type=int)
-    parser.add_argument("--var_true", action="store_true")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 5), "--http"])
+    nap = NetArgumentParser()
+    nap.parser.add_argument("--var_str", type=str)
+    nap.parser.add_argument("--var_int", type=int)
+    nap.parser.add_argument("--var_true", action="store_true")
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 5), "--http"])
 
 def http_autoformat_nargs_append():
     def main(args):
         return vars(args)
 
-    parser = NetArgumentParser()
-    parser.add_argument("-x", type=int, nargs="+")
-    parser.add_argument("-y", type=int, action="append")
-    parser.add_argument("-z", type=int, nargs="+", action="append")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 6), "--http"])
+    nap = NetArgumentParser()
+    nap.parser.add_argument("-x", type=int, nargs="+")
+    nap.parser.add_argument("-y", type=int, action="append")
+    nap.parser.add_argument("-z", type=int, nargs="+", action="append")
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 6), "--http"])
 
 def http_no_args():
     def main(args):
         return {"a": 1}
 
-    parser = NetArgumentParser()
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 7), "--http"])
+    nap = NetArgumentParser()
+    nap(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 7), "--http"])
 
 
 class TcpSocketRequest:
