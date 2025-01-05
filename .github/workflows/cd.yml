@@ -1,0 +1,83 @@
+name: Publish and test
+
+on:
+  push:
+    tags:
+      - '**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pypi-publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    outputs:
+      version: ${{ steps.check_tag.outputs.version }}
+
+    steps:
+    - uses: actions/checkout@v4.2.1
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+    - uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.12"
+
+    - id: check_tag
+      name: Check tag
+      run: |
+        tag_toml=$(grep "version = " pyproject.toml | cut -d\" -f2)
+        tag_git=$(git tag -l | tail -n 1)
+        if [ "$tag_toml" = "$tag_git" ]; then
+            echo "version=$tag_toml" >> "$GITHUB_OUTPUT"
+            exit 0
+        else
+            exit 1
+        fi
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install --all-extras
+
+    - name: Build
+      run: poetry build
+
+    - name: Publish
+      uses: pypa/gh-action-pypi-publish@v1.12.3
+
+    - name: Recovery time for PyPi
+      run: sleep 30
+
+  test:
+    needs: pypi-publish
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.1
+    - uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m venv venv
+        ./venv/bin/pip install netargparse requests
+
+    - name: Verify version
+      run: |
+        ver_pip=$(venv/bin/pip freeze | grep netargparse | cut -d= -f3)
+        if [ "${{ needs.pypi-publish.outputs.version }}" = "$ver_pip" ]; then
+            exit 0
+        else
+            exit 1
+        fi
+
+    - name: Run tests
+      run: ./venv/bin/python tests/test_netargparse.py
