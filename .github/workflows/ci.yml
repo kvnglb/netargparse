@@ -58,3 +58,6 @@ jobs:
 
     - name: Run tests
       run: poetry run python tests/test_netargparse.py
+
+    - name: Run compatibility tests for v0.1
+      run: poetry run python tests/test_netargparse_v0.1.py

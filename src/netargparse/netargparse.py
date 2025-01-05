@@ -14,7 +14,7 @@ class ArgumentParserNoExit(argparse.ArgumentParser):
 
 
 class NetArgumentParser:
-    """The class that should be the drop-in replacement for `ArgumentParser`.
+    """More or less the drop-in replacement for `ArgumentParser`.
 
     Attributes
     ----------
@@ -31,9 +31,9 @@ class NetArgumentParser:
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
         """Initialize the `meta_parser` and `parser` and configure the `nap_parser`."""
-        self.meta_parser = ArgumentParserNoExit()
+        self.meta_parser = ArgumentParserNoExit(*args, **kwargs)
 
         subparser = self.meta_parser.add_subparsers(dest="_cmd")
 
@@ -109,6 +109,10 @@ class NetArgumentParser:
 
             time.sleep(resp_delay)
             server.send_msg(autoformat, response=ans, exception=exc)
+
+    def add_argument(self, *args: t.Any, **kwargs: t.Any) -> None:
+        """Provide the same method as ArgumentParser."""
+        self.parser.add_argument(*args, **kwargs)
 
     def parse_args(self, parse_args: t.Union[None, t.List[str]]) -> None:
         """Prase the arguments of the `meta_parser`.

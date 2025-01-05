@@ -40,7 +40,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
     - The main function must take only one argument of type argparse.Namespace
 
     file: `example1.py`
-    ```
+    ```python
     from netargparse import NetArgumentParser
 
     def add(x, y):
@@ -50,10 +50,10 @@ The Python script that uses the NetArgumentParser must follow these rules:
         s = add(args.x, args.y)
         print(s)
 
-    nap = NetArgumentParser()
-    nap.parser.add_argument("-x", type=int, required=True)
-    nap.parser.add_argument("-y", type=int, required=True)
-    nap(main)
+    parser = NetArgumentParser()
+    parser.add_argument("-x", type=int, required=True)
+    parser.add_argument("-y", type=int, required=True)
+    parser(main)
     ```
     Running the script as standalone with `python example1.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example1.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": null, "exception": "", "finished": 1}`. There is no response because the script does not return anything.
 
@@ -61,41 +61,41 @@ The Python script that uses the NetArgumentParser must follow these rules:
     - NetArgumentParser takes care of a valid format in the response section (default `autoformat=True`). The main function must return a dictionary, and its entries will be either converted into a valid json or xml string.
 
       file: `example2.py`
-      ```
+      ```python
       from netargparse import NetArgumentParser
 
       def main(args):
           s = args.x + args.y
           return {"sum": s}
 
-      nap = NetArgumentParser()
-      nap.parser.add_argument("-x", type=int, required=True)
-      nap.parser.add_argument("-y", type=int, required=True)
-      nap(main)
+      parser = NetArgumentParser()
+      parser.add_argument("-x", type=int, required=True)
+      parser.add_argument("-y", type=int, required=True)
+      parser(main)
       ````
       Running the script as above will return `{"response": {"sum": 10}, "exception": "", "finished": 1}` or `<nap><response><sum>10</sum></response><exception></exception><finished>1</finished></nap>`
 
     - The function itself is responsible for a valid format in the response section (`autoformat=False`). The main function must return a string, that can be anything. The function is responsible for giving a valid json or xml format but can also just send unformatted stuff, where the receiver of this message will have hard times interpreting this message.
 
       file: `example3.py`
-      ```
+      ```python
       from netargparse import NetArgumentParser
 
       def main(args):
           s = args.x + args.y
           return f'Some weird <xml> {{"stuff": {s}"'
 
-      nap = NetArgumentParser()
-      nap.parser.add_argument("-x", type=int, required=True)
-      nap.parser.add_argument("-y", type=int, required=True)
-      nap(main, autoformat=False)
+      parser = NetArgumentParser()
+      parser.add_argument("-x", type=int, required=True)
+      parser.add_argument("-y", type=int, required=True)
+      parser(main, autoformat=False)
       ````
       Running the script as above either returns `{"response": Some weird <xml> {"stuff": 10", "exception": "", "finished": 1}` or `<nap><response>Some weird <xml> {"stuff": 10"</response><exception></exception><finished>1</finished></nap>`.
 
 3)  A parser argument with the destination of `_cmd` is not allowed, because it is added by the NetArgumentParser to determine whether the main function is executed as standalone or in API mode.
 
     file: `example4.py`
-    ```
+    ```python
     from netargparse import NetArgumentParser
 
     def main(args):
@@ -105,10 +105,10 @@ The Python script that uses the NetArgumentParser must follow these rules:
         else:
             return {"sum": s}
 
-    nap = NetArgumentParser()
-    nap.parser.add_argument("-x", type=int, required=True)
-    nap.parser.add_argument("-y", type=int, required=True)
-    nap(main)
+    parser = NetArgumentParser()
+    parser.add_argument("-x", type=int, required=True)
+    parser.add_argument("-y", type=int, required=True)
+    parser(main)
     ````
     When running the script in standalone, it will print the sum in the terminal, whereas in API mode, the terminal stays clean and the return of the main function is just send to the client.
 

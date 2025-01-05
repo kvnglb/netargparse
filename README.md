@@ -4,7 +4,7 @@ A Python library that imbues the standard ArgumentParser with an API for the Pyt
 This library is intended as a replacement for the ArgumentParser of the standard argparse library, providing an additional TCP based API for handling the arguments of the script.
 
 A minimal example `minimal.py` with the ArgumentParser could be
-```
+```python
 from argparse import ArgumentParser
 
 def add_one(args):
@@ -25,7 +25,7 @@ $ python minimal.py -x 5
 ```
 
 Replacing the ArgumentParser with the NetArgumentParser from this library:
-```
+```python
 from netargparse import NetArgumentParser
 
 def add_one(args):
@@ -33,9 +33,9 @@ def add_one(args):
     print(new_number)
     return(new_number)
 
-nap = NetArgumentParser()
-nap.parser.add_argument("-x", type=int, required=True)
-nap(add_one)
+parser = NetArgumentParser()
+parser.add_argument("-x", type=int, required=True)
+parser(add_one)
 ```
 
 The script can now be run in two modes:
