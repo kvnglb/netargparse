@@ -115,7 +115,7 @@ class NetArgumentParser:
         self.parser.add_argument(*args, **kwargs)
 
     def parse_args(self, parse_args: t.Union[None, t.List[str]]) -> None:
-        """Prase the arguments of the `meta_parser`.
+        """Parse the arguments of the `meta_parser`.
 
         Parameters
         ----------
