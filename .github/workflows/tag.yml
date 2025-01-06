@@ -1,0 +1,30 @@
+name: Tag
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.1
+
+    - id: get_version
+      name: Get version
+      run: |
+        ver_toml=$(grep "version = " pyproject.toml | cut -d\" -f2)
+        echo "version=$ver_toml" >> "$GITHUB_OUTPUT"
+
+    - name: Set up git
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+    - name: Tag version
+      run: |
+        git tag "${{ steps.get_version.outputs.version }}"
+        git push origin "${{ steps.get_version.outputs.version }}"

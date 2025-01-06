@@ -1,0 +1,37 @@
+name: Test published package
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.1
+    - uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m venv venv
+        ./venv/bin/pip install netargparse requests
+
+    - name: Verify version
+      run: |
+        ver_toml=$(grep "version = " pyproject.toml | cut -d\" -f2)
+        ver_pip=$(venv/bin/pip freeze | grep netargparse | cut -d= -f3)
+        if [ "$ver_toml" = "$ver_pip" ]; then
+            exit 0
+        else
+            exit 1
+        fi
+
+    - name: Run tests
+      run: ./venv/bin/python tests/test_netargparse.py
