@@ -93,6 +93,13 @@ def http_no_args():
     parser = NetArgumentParser()
     parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 7), "--http"])
 
+def http_nested_dict():
+    def main(args):
+        return {"a": {"b": "b1", "c": {"d": "d1", "e": "e1"}, "f": "f1"}, "g": "g1"}
+
+    parser = NetArgumentParser()
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 8), "--http"])
+
 
 class TcpSocketRequest:
     def __init__(self, port):
@@ -363,6 +370,11 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, '{"response": {"a": 1}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_http_json_a_nested_dict(self):
+        ans = s_http_a_nd.txrx("/")
+        self.assertEqual(ans, '{"response": {"a": {"b": "b1", "c": {"d": "d1", "e": "e1"}, "f": "f1"}, "g": "g1"}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
     # HTTP, xml resp, autoformat
     def test_http_xml_a_valid_tx(self):
         ans = s_http_a.txrx("/xml?--var_str=value&--var_int=2")
@@ -399,10 +411,15 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, "<nap><response><a>1</a></response><exception></exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
+    def test_http_xml_a_nested_dict(self):
+        ans = s_http_a_nd.txrx("/xml")
+        self.assertEqual(ans, "<nap><response><a><b>b1</b><c><d>d1</d><e>e1</e></c><f>f1</f></a><g>g1</g></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
 
 if __name__ == "__main__":
     for t in [tcp_socket_no_autoformat, tcp_socket_autoformat, tcp_socket_autoformat_nargs_append, tcp_socket_no_args,
-              http_no_autoformat, http_autoformat, http_autoformat_nargs_append, http_no_args]:
+              http_no_autoformat, http_autoformat, http_autoformat_nargs_append, http_no_args, http_nested_dict]:
         Thread(target=t, daemon=True).start()
 
     for i in range(10):
@@ -425,6 +442,8 @@ if __name__ == "__main__":
                 s_http_a_narap = HttpRequest(port_start + 6)
             if not "s_http_a_no_args" in globals():
                 s_http_a_no_args = HttpRequest(port_start + 7)
+            if not "s_http_a_nd" in globals():
+                s_http_a_nd = HttpRequest(port_start + 8)
             break
         except (ConnectionRefusedError, requests.exceptions.ConnectionError):
             time.sleep(1)

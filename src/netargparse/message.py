@@ -140,13 +140,23 @@ class MessageXml:
         return ret
 
     @staticmethod
-    def _from_dict(d: dict) -> str:
-        """Convert a dict into xml formatted str.
+    def _from_dict(d: dict, top: bool = True) -> str:
+        """Convert a dictionary into xml formatted str.
+
+        The dict MUST only contain a string, dictionary or any other
+        non-iterable as value. This rule applies recursively to all
+        nested dictionaries.
 
         Parameters
         ----------
         d
-            Dictionary, that should be converted an xml styled str.
+            Dictionary, that should be converted in an xml styled str.
+        top
+            True: The function is at the highest level of the dict
+                  and therefore must return its elements.
+            False: The function iterates through some nested dictionaries,
+                   so the root element itself is returned and further processed
+                   to add the entries from the nested dictionary.
 
         Returns
         -------
@@ -155,8 +165,20 @@ class MessageXml:
         """
         root = ElementTree.Element("root")
         for key, val in d.items():
-            ElementTree.SubElement(root, key).text = str(val)
-        return "".join(ElementTree.tostring(e, encoding="unicode") for e in root)
+            if type(val) is dict:
+                root_sub = MessageXml._from_dict(val, False)
+                sub_element = ElementTree.SubElement(root, key)
+                for element in root_sub:
+                    # mypy does not recognize, that when `False` is given to
+                    # from_dict, only ElementTree.Element can be returned
+                    sub_element.append(element)  # type: ignore[arg-type]
+            else:
+                ElementTree.SubElement(root, key).text = str(val)
+        if top:
+            return "".join(ElementTree.tostring(e, encoding="unicode") for e in root)
+        else:
+            # only used for recursive calls to iterate through nested dicts
+            return root  # type: ignore[return-value]
 
     @staticmethod
     def _replace_breaking_chars(string: str) -> str:
