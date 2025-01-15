@@ -10,7 +10,7 @@ from argparse import ArgumentParser
 def add_one(args):
     new_number = args.x + 1
     print(new_number)
-    return(new_number)
+    return new_number
 
 parser = ArgumentParser()
 parser.add_argument("-x", type=int, required=True)
@@ -31,7 +31,7 @@ from netargparse import NetArgumentParser
 def add_one(args):
     new_number = args.x + 1
     print(new_number)
-    return(new_number)
+    return {"new_number": new_number}
 
 parser = NetArgumentParser()
 parser.add_argument("-x", type=int, required=True)
@@ -58,7 +58,7 @@ It is then possible to run the main function of the script by sending an HTTP ge
 
 For example visit http://localhost:7000/?-x=5 with a browser and receive the script's return as json.
 ```
-{"response": 6, "exception": "", "finished": 1}
+{"response": {"new_number": 6}, "exception": "", "finished": 1}
 ```
 
 # Installation

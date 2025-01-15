@@ -87,7 +87,7 @@ class NetArgumentParser:
             server = TcpSocketServer(self.args.ip, self.args.port)
 
         while True:
-            ans = ""  # type: t.Union[str, dict]
+            ans = ""  # type: t.Union[dict, str]
             exc = ""
 
             try:

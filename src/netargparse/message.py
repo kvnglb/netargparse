@@ -1,5 +1,6 @@
 import json
 import typing as t
+import warnings
 import xml.etree.ElementTree as ElementTree
 
 
@@ -143,9 +144,9 @@ class MessageXml:
     def _from_dict(d: dict, top: bool = True) -> str:
         """Convert a dictionary into xml formatted str.
 
-        The dict MUST only contain a string, dictionary or any other
-        non-iterable as value. This rule applies recursively to all
-        nested dictionaries.
+        The dict MUST only contain a dictionary, string or any other
+        non-iterable (convertable to str and json serializable) as value.
+        This rule applies recursively to all nested dictionaries.
 
         Parameters
         ----------
@@ -158,11 +159,21 @@ class MessageXml:
                    so the root element itself is returned and further processed
                    to add the entries from the nested dictionary.
 
+        Raises
+        ------
+        Exception
+            The function started by NetArgumentParser does not return a
+            dictionary but NetArgumentParser should autoformat the return.
+
         Returns
         -------
         The xml styled str with tags of the dict keys and its values as texts.
 
         """
+        if type(d) is not dict:
+            raise Exception("Cannot autoformat non-dict. Check return of the function started by NetArgumentParser.")
+        json.dumps(d)  # evil cross call to have same restrictions in both message formats
+
         root = ElementTree.Element("root")
         for key, val in d.items():
             if type(val) is dict:
@@ -170,7 +181,11 @@ class MessageXml:
                 sub_element = ElementTree.SubElement(root, key)
                 for element in root_sub:
                     # mypy does not recognize, that when `False` is given to
-                    # from_dict, only ElementTree.Element can be returned
+                    # from_dict, only ElementTree.Element can be returned. So
+                    # _from_dict(...) -> t.Union[str, ElementTree.Element] would
+                    # not help, since sub_element.append wants only the Element
+                    # type. Furthermore, this type hint would cause a clutter
+                    # for all non recursive calls that expect just a string.
                     sub_element.append(element)  # type: ignore[arg-type]
             else:
                 ElementTree.SubElement(root, key).text = str(val)
@@ -220,27 +235,20 @@ class MessageXml:
         exc
             The information that should be sent in the exception section.
 
-        Raises
-        ------
-        Exception
-            When autoformat is true but the function `func` does not
-            return a dict.
-
         Returns
         -------
         Message that is sent to the client.
 
         """
+        r = ""  # type: t.Union[dict, str]
         e = self._replace_breaking_chars(exc)
-        if resp == "":
-            r = resp
-        else:
-            if autoformat and isinstance(resp, dict):
-                r = self._from_dict(resp)
-            elif autoformat and not isinstance(resp, dict):
-                raise Exception("Cannot autoformat string. Check return of the function started by NetArgumentParser.")
-            else:
-                r = resp
+        if resp != "":
+            try:
+                # a wrong type is handled within _from_dict
+                r = self._from_dict(resp) if autoformat else resp  # type: ignore[arg-type]
+            except Exception as e1:
+                e = self._replace_breaking_chars(str(e1))
+                warnings.warn(str(e1))
         return "<nap><response>{}</response><exception>{}</exception><finished>1</finished></nap>".format(r, e).encode("utf-8")
 
 
@@ -264,20 +272,24 @@ class MessageJson:
         return json.loads(json_string)
 
     @staticmethod
-    def _from_dict(d: t.Union[dict, str]) -> str:
+    def _from_dict(d: dict) -> str:
         """Convert a dict into a json formatted str.
+
+        The dict MUST only contain a dictionary, string or any other
+        non-iterable (convertable to str and json serializable) as value.
+        This rule applies recursively to all nested dictionaries.
 
         Parameters
         ----------
         d
-            Dictionary, that should be converted a json styled str. A str will
-            be also formatted in a valid json string.
+            Dictionary, that should be converted a json styled str.
 
         Returns
         -------
         The json styled str with keys of the dict keys and its values.
 
         """
+        MessageXml._from_dict(d)  # evil cross call to have same restrictions in both message formats
         return json.dumps(d)
 
     @staticmethod
@@ -316,8 +328,7 @@ class MessageJson:
         autoformat
             True: resp is converted into a json string, where the keys of the
                   dict will be json keys and the values of the dict will be
-                  the json keys texts. A plain str is autoformatted into a
-                  valid json str.
+                  the json keys texts.
             False: resp will be sent to the client "as is".
         resp
             The information that should be sent in the response section.
@@ -329,11 +340,13 @@ class MessageJson:
         Message that is sent to the client.
 
         """
+        r = '""'  # type: t.Union[dict, str]
         e = self._replace_breaking_chars(exc)
-        if resp == "":
-            r = resp
-            ret = '{{"response": "{}", "exception": "{}", "finished": 1}}'
-        else:
-            r = self._from_dict(resp) if autoformat else resp
-            ret = '{{"response": {}, "exception": "{}", "finished": 1}}'
-        return ret.format(r, e).encode("utf-8")
+        if resp != "":
+            try:
+                # a wrong type is handled within _from_dict
+                r = self._from_dict(resp) if autoformat else resp  # type: ignore[arg-type]
+            except Exception as e1:
+                e = self._replace_breaking_chars(str(e1))
+                warnings.warn(str(e1))
+        return '{{"response": {}, "exception": "{}", "finished": 1}}'.format(r, e).encode("utf-8")

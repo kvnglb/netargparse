@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ElementTree
 from netargparse import NetArgumentParser
 
 
-port_start = 7000
+port_start = 7200
 
 def tcp_socket_no_autoformat():
     def main(args):
@@ -99,6 +99,13 @@ def http_nested_dict():
 
     parser = NetArgumentParser()
     parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 8), "--http"])
+
+def http_autoformat_no_dict():
+    def main(args):
+        return "test"
+
+    parser = NetArgumentParser()
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 9), "--http"])
 
 
 class TcpSocketRequest:
@@ -371,8 +378,13 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertResponse(ans, "json")
 
     def test_http_json_a_nested_dict(self):
-        ans = s_http_a_nd.txrx("/")
+        ans = s_http_a_nest_d.txrx("/")
         self.assertEqual(ans, '{"response": {"a": {"b": "b1", "c": {"d": "d1", "e": "e1"}, "f": "f1"}, "g": "g1"}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
+    def test_http_json_a_no_dict(self):
+        ans = s_http_a_no_d.txrx("/")
+        self.assertEqual(ans, '{"response": "", "exception": "Cannot autoformat non-dict. Check return of the function started by NetArgumentParser.", "finished": 1}')
         self.assertResponse(ans, "json")
 
     # HTTP, xml resp, autoformat
@@ -412,14 +424,20 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertResponse(ans, "xml")
 
     def test_http_xml_a_nested_dict(self):
-        ans = s_http_a_nd.txrx("/xml")
+        ans = s_http_a_nest_d.txrx("/xml")
         self.assertEqual(ans, "<nap><response><a><b>b1</b><c><d>d1</d><e>e1</e></c><f>f1</f></a><g>g1</g></response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
+
+    def test_http_xml_a_no_dict(self):
+        ans = s_http_a_no_d.txrx("/xml")
+        self.assertEqual(ans, "<nap><response></response><exception>Cannot autoformat non-dict. Check return of the function started by NetArgumentParser.</exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
 
 if __name__ == "__main__":
     for t in [tcp_socket_no_autoformat, tcp_socket_autoformat, tcp_socket_autoformat_nargs_append, tcp_socket_no_args,
-              http_no_autoformat, http_autoformat, http_autoformat_nargs_append, http_no_args, http_nested_dict]:
+              http_no_autoformat, http_autoformat, http_autoformat_nargs_append, http_no_args, http_nested_dict,
+              http_autoformat_no_dict]:
         Thread(target=t, daemon=True).start()
 
     for i in range(10):
@@ -442,8 +460,10 @@ if __name__ == "__main__":
                 s_http_a_narap = HttpRequest(port_start + 6)
             if not "s_http_a_no_args" in globals():
                 s_http_a_no_args = HttpRequest(port_start + 7)
-            if not "s_http_a_nd" in globals():
-                s_http_a_nd = HttpRequest(port_start + 8)
+            if not "s_http_a_nest_d" in globals():
+                s_http_a_nest_d = HttpRequest(port_start + 8)
+            if not "s_http_a_no_d" in globals():
+                s_http_a_no_d = HttpRequest(port_start + 9)
             break
         except (ConnectionRefusedError, requests.exceptions.ConnectionError):
             time.sleep(1)
