@@ -49,13 +49,14 @@ The Python script that uses the NetArgumentParser must follow these rules:
     def main(args):
         s = add(args.x, args.y)
         print(s)
+        return {}
 
     parser = NetArgumentParser()
     parser.add_argument("-x", type=int, required=True)
     parser.add_argument("-y", type=int, required=True)
     parser(main)
     ```
-    Running the script as standalone with `python example1.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example1.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": null, "exception": "", "finished": 1}`. There is no response because the script does not return anything.
+    Running the script as standalone with `python example1.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example1.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": {}, "exception": "", "finished": 1}`. There is just an empty dictionary in the response because the script adds no entries (at least `return {}` must be returned when `autoformat=True` (default) is used, see below for further details).
 
 2)  To receive a valid response, there are two possibilities
     - NetArgumentParser takes care of a valid format in the response section (default `autoformat=True`). The main function must return a dictionary, and its entries will be either converted into a valid json or xml string. The dictionary MUST contain only values of type
