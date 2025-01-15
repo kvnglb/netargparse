@@ -58,7 +58,12 @@ The Python script that uses the NetArgumentParser must follow these rules:
     Running the script as standalone with `python example1.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example1.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": null, "exception": "", "finished": 1}`. There is no response because the script does not return anything.
 
 2)  To receive a valid response, there are two possibilities
-    - NetArgumentParser takes care of a valid format in the response section (default `autoformat=True`). The main function must return a dictionary, and its entries will be either converted into a valid json or xml string.
+    - NetArgumentParser takes care of a valid format in the response section (default `autoformat=True`). The main function must return a dictionary, and its entries will be either converted into a valid json or xml string. The dictionary MUST contain only values of type
+      - dictionary,
+      - string or
+      - any other non-dictionary/non-iterable, that is convertible to string and json serializable
+
+      Of course, the values in the dictionary don't have to be of the same type. These rules apply recursively to all nested dictionaries. 
 
       file: `example2.py`
       ```python
