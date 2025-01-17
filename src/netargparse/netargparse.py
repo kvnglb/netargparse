@@ -112,6 +112,7 @@ class NetArgumentParser:
 
     @staticmethod
     def _split_string(s: str) -> list:
+        """Split string at whitespace but not when enclosed in quotes."""
         ret = []
         temp_str = ""
         is_inside = False
