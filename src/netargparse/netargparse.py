@@ -61,7 +61,7 @@ class NetArgumentParser:
         func
             THE function.
         autoformat
-            True: The return of the function `func` can be a dict or str and is
+            True: The return of the function `func` must be a dict and is
                   automatically formatted to a valid xml or json format as response
                   in nap mode.
             False: The return of the function `func` is handed "as is" as response
@@ -123,9 +123,11 @@ class NetArgumentParser:
                 if is_inside and char == quote:
                     is_inside = False
                     quote = ""
-                else:
+                elif not is_inside and not quote:
                     is_inside = True
                     quote = char
+                else:
+                    temp_str += char
             elif char.isspace() and not is_inside:
                 if temp_str:
                     ret.append(temp_str)

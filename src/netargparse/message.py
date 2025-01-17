@@ -326,9 +326,9 @@ class MessageJson:
         Parameters
         ----------
         autoformat
-            True: resp is converted into a json string, where the keys of the
-                  dict will be json keys and the values of the dict will be
-                  the json keys texts.
+            True: resp must be a dict and is converted into a json string, where
+                  the keys of the dict will be json keys and the values of the
+                  dict will be the json keys texts.
             False: resp will be sent to the client "as is".
         resp
             The information that should be sent in the response section.
