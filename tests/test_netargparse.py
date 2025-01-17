@@ -284,6 +284,11 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, b'{"response": {"x": ["11", "22", "33"], "y": ["11"], "z": [["11", "22", "33"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_plain_json_a_narap_double_quotes(self):
+        ans = s_tcp_a_narap.txrx(b'{"-x": ["\\"11 1\\" 222 333"], "-y": [1, "\\"1 1\\"", 111], "-z": ["1 \\"2 3\\"", "\\"11 22\\" 33", "111 \\"2 \'2 2\\" 333"]}')
+        self.assertEqual(ans, b'{"response": {"x": ["11 1", "222", "333"], "y": ["1", "1 1", "111"], "z": [["1", "2 3"], ["11 22", "33"], ["111", "2 \'2 2", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
     def test_plain_json_a_narap_single_quotes(self):
         ans = s_tcp_a_narap.txrx(b'{"-x": ["\'11 1\' 222 333"], "-y": [1, "\'1 1\'", 111], "-z": ["1 \'2 3\'", "\'11 22\' 33", "111 \'2 \\"2 2\' 333"]}')
         self.assertEqual(ans, b'{"response": {"x": ["11 1", "222", "333"], "y": ["1", "1 1", "111"], "z": [["1", "2 3"], ["11 22", "33"], ["111", "2 \\"2 2", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
