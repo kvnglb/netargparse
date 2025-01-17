@@ -96,11 +96,11 @@ class NetArgumentParser:
                     continue
                 args_l = []
                 for item in args:
-                    val = item.split(" ", 1)
-                    if len(val) == 2 and (val[1].startswith("'") or val[1].startswith('"')):
-                        args_l.extend([val[0], val[1].replace("'", "").replace('"', "")])
+                    val = item.split(" ")
+                    if len(val) <= 2:
+                        args_l.extend(val)
                     else:
-                        args_l.extend(item.split(" "))
+                        args_l.extend(self._split_string(item))
                 args_d = self.parser.parse_args(args_l)
                 args_d._cmd = "nap"
                 ans = func(args_d)
@@ -109,6 +109,33 @@ class NetArgumentParser:
 
             time.sleep(resp_delay)
             server.send_msg(autoformat, response=ans, exception=exc)
+
+    @staticmethod
+    def _split_string(s: str) -> list:
+        ret = []
+        temp_str = ""
+        is_inside = False
+        quote = ""
+
+        for char in s:
+            if char in ('"', "'"):
+                if is_inside and char == quote:
+                    is_inside = False
+                    quote = ""
+                else:
+                    is_inside = True
+                    quote = char
+            elif char.isspace() and not is_inside:
+                if temp_str:
+                    ret.append(temp_str)
+                    temp_str = ""
+            else:
+                temp_str += char
+
+        if temp_str:
+            ret.append(temp_str)
+
+        return ret
 
     def add_argument(self, *args: t.Any, **kwargs: t.Any) -> None:
         """Provide the same method as ArgumentParser."""
