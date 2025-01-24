@@ -107,7 +107,7 @@ class TcpSocketServer:
         Parameters
         ----------
         autoformat
-            True: The return of the function `func` can be a dict or str and is
+            True: The return of the function `func` must be a dict and is
                   automatically formatted to a valid xml or json format as response
                   in nap mode.
             False: The return of the function `func` is handed "as is" as response
@@ -175,7 +175,7 @@ class HttpServer:
                 Parameters
                 ----------
                 autoformat
-                    True: The return of the function `func` can be a dict or str and is
+                    True: The return of the function `func` must be a dict and is
                           automatically formatted to a valid xml or json format as response
                           in nap mode.
                     False: The return of the function `func` is handed "as is" as response
@@ -255,7 +255,7 @@ class HttpServer:
         Parameters
         ----------
         autoformat
-            True: The return of the function `func` can be a dict or str and is
+            True: The return of the function `func` must be a dict and is
                   automatically formatted to a valid xml or json format as response
                   in nap mode.
             False: The return of the function `func` is handed "as is" as response

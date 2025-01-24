@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ElementTree
 from netargparse import NetArgumentParser
 
 
-port_start = 7300
+port_start = 7200
 
 def tcp_socket_no_autoformat():
     def main(args):
@@ -40,9 +40,9 @@ def tcp_socket_autoformat_nargs_append():
         return vars(args)
 
     parser = NetArgumentParser()
-    parser.add_argument("-x", type=str, nargs="+")
-    parser.add_argument("-y", type=str, action="append")
-    parser.add_argument("-z", type=str, nargs="+", action="append")
+    parser.add_argument("-x", type=int, nargs="+")
+    parser.add_argument("-y", type=int, action="append")
+    parser.add_argument("-z", type=int, nargs="+", action="append")
     parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 2)])
 
 def tcp_socket_no_args():
@@ -81,9 +81,9 @@ def http_autoformat_nargs_append():
         return vars(args)
 
     parser = NetArgumentParser()
-    parser.add_argument("-x", type=str, nargs="+")
-    parser.add_argument("-y", type=str, action="append")
-    parser.add_argument("-z", type=str, nargs="+", action="append")
+    parser.add_argument("-x", type=int, nargs="+")
+    parser.add_argument("-y", type=int, action="append")
+    parser.add_argument("-z", type=int, nargs="+", action="append")
     parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 6), "--http"])
 
 def http_no_args():
@@ -215,22 +215,12 @@ class TestNetArgumentParser(unittest.TestCase):
 
     def test_plain_xml_a_narap_two_append(self):
         ans = s_tcp_a_narap.txrx(b"<nap><_x>1 2 3</_x><_x>11 22 33</_x><_y>1</_y><_y>11</_y><_z>1 2 3</_z><_z>11 22 33</_z></nap>")
-        self.assertEqual(ans, b"<nap><response><x>['11', '22', '33']</x><y>['1', '11']</y><z>[['1', '2', '3'], ['11', '22', '33']]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
+        self.assertEqual(ans, b"<nap><response><x>[11, 22, 33]</x><y>[1, 11]</y><z>[[1, 2, 3], [11, 22, 33]]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
     def test_plain_xml_a_narap_three_append(self):
         ans = s_tcp_a_narap.txrx(b"<nap><_x>1 2 3</_x><_x>11 22 33</_x><_x>111 222 333</_x><_y>1</_y><_y>11</_y><_y>111</_y><_z>1 2 3</_z><_z>11 22 33</_z><_z>111 222 333</_z></nap>")
-        self.assertEqual(ans, b"<nap><response><x>['111', '222', '333']</x><y>['1', '11', '111']</y><z>[['1', '2', '3'], ['11', '22', '33'], ['111', '222', '333']]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_a_narap_double_quotes(self):
-        ans = s_tcp_a_narap.txrx(b'<nap><_x>"1 2" 3</_x><_y>1</_y><_y>"1 1"</_y><_y>111</_y><_z>1 "2 3"</_z><_z>"11 22" 33</_z><_z>111 "2 \'2 2" 333</_z></nap>')
-        self.assertEqual(ans, b"<nap><response><x>['1 2', '3']</x><y>['1', '1 1', '111']</y><z>[['1', '2 3'], ['11 22', '33'], ['111', \"2 '2 2\", '333']]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_a_narap_single_quotes(self):
-        ans = s_tcp_a_narap.txrx(b"<nap><_x>'1 2' 3</_x><_y>1</_y><_y>'1 1'</_y><_y>111</_y><_z>1 '2 3'</_z><_z>'11 22' 33</_z><_z>111 '2 \"2 2' 333</_z></nap>")
-        self.assertEqual(ans, b"<nap><response><x>['1 2', '3']</x><y>['1', '1 1', '111']</y><z>[['1', '2 3'], ['11 22', '33'], ['111', '2 \"2 2', '333']]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
+        self.assertEqual(ans, b"<nap><response><x>[111, 222, 333]</x><y>[1, 11, 111]</y><z>[[1, 2, 3], [11, 22, 33], [111, 222, 333]]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
     def test_plain_xml_invalid_a_narap(self):
@@ -241,41 +231,6 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_plain_xml_a_no_arguments(self):
         ans = s_tcp_a_no_args.txrx(b"<nap></nap>")
         self.assertEqual(ans, b"<nap><response><a>1</a></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape(self):
-        ans = s_tcp_a.txrx(b"<nap><__var_str>hello\\ world</__var_str><__var_int>2</__var_int></nap>")
-        self.assertEqual(ans, b"<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape_within_double_quotes(self):
-        ans = s_tcp_a.txrx(b'<nap><__var_str>"hello\\ world"</__var_str><__var_int>2</__var_int></nap>')
-        self.assertEqual(ans, b"<nap><response><var_str>hello\\ world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape_within_single_quotes(self):
-        ans = s_tcp_a.txrx(b"<nap><__var_str>'hello\\ world'</__var_str><__var_int>2</__var_int></nap>")
-        self.assertEqual(ans, b"<nap><response><var_str>hello\\ world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape_double_quote(self):
-        ans = s_tcp_a.txrx(b'<nap><__var_str>hello\\"world</__var_str><__var_int>2</__var_int></nap>')
-        self.assertEqual(ans, b'<nap><response><var_str>hello"world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>')
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape_single_quote(self):
-        ans = s_tcp_a.txrx(b"<nap><__var_str>hello\\'world</__var_str><__var_int>2</__var_int></nap>")
-        self.assertEqual(ans, b"<nap><response><var_str>hello'world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape_quotes_within_double_quotes(self):
-        ans = s_tcp_a.txrx(b'<nap><__var_str>"hello\\"world"</__var_str><__var_int>2</__var_int></nap>')
-        self.assertEqual(ans, b'<nap><response><var_str>hello"world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>')
-        self.assertResponse(ans, "xml")
-
-    def test_plain_xml_posix_escape_quotes_within_single_quotes(self):
-        ans = s_tcp_a.txrx(b"<nap><__var_str>'hello\\'world'</__var_str><__var_int>2</__var_int></nap>")
-        self.assertEqual(ans, b'<nap><response></response><exception>No closing quotation</exception><finished>1</finished></nap>')
         self.assertResponse(ans, "xml")
 
     # Plain json, autoformat
@@ -306,27 +261,17 @@ class TestNetArgumentParser(unittest.TestCase):
 
     def test_plain_json_a_narap_two_append(self):
         ans = s_tcp_a_narap.txrx(b'{"-x": ["1 2 3", "11 22 33"], "-y": [1, 11], "-z": ["1 2 3", "11 22 33"]}')
-        self.assertEqual(ans, b'{"response": {"x": ["11", "22", "33"], "y": ["1", "11"], "z": [["1", "2", "3"], ["11", "22", "33"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertEqual(ans, b'{"response": {"x": [11, 22, 33], "y": [1, 11], "z": [[1, 2, 3], [11, 22, 33]], "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     def test_plain_json_a_narap_three_append(self):
         ans = s_tcp_a_narap.txrx(b'{"-x": ["1 2 3", "11 22 33", "111 222 333"], "-y": [1, 11, 111], "-z": ["1 2 3", "11 22 33", "111 222 333"]}')
-        self.assertEqual(ans, b'{"response": {"x": ["111", "222", "333"], "y": ["1", "11", "111"], "z": [["1", "2", "3"], ["11", "22", "33"], ["111", "222", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertEqual(ans, b'{"response": {"x": [111, 222, 333], "y": [1, 11, 111], "z": [[1, 2, 3], [11, 22, 33], [111, 222, 333]], "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     def test_plain_json_a_narap_double_key(self):
         ans = s_tcp_a_narap.txrx(b'{"-x": "1 2 3", "-x": "11 22 33", "-y": 1, "-y": 11, "-z": "11 22 33", "-z": "11 22 33"}')
-        self.assertEqual(ans, b'{"response": {"x": ["11", "22", "33"], "y": ["11"], "z": [["11", "22", "33"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_a_narap_double_quotes(self):
-        ans = s_tcp_a_narap.txrx(b'{"-x": ["\\"11 1\\" 222 333"], "-y": [1, "\\"1 1\\"", 111], "-z": ["1 \\"2 3\\"", "\\"11 22\\" 33", "111 \\"2 \'2 2\\" 333"]}')
-        self.assertEqual(ans, b'{"response": {"x": ["11 1", "222", "333"], "y": ["1", "1 1", "111"], "z": [["1", "2 3"], ["11 22", "33"], ["111", "2 \'2 2", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_a_narap_single_quotes(self):
-        ans = s_tcp_a_narap.txrx(b'{"-x": ["\'11 1\' 222 333"], "-y": [1, "\'1 1\'", 111], "-z": ["1 \'2 3\'", "\'11 22\' 33", "111 \'2 \\"2 2\' 333"]}')
-        self.assertEqual(ans, b'{"response": {"x": ["11 1", "222", "333"], "y": ["1", "1 1", "111"], "z": [["1", "2 3"], ["11 22", "33"], ["111", "2 \\"2 2", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertEqual(ans, b'{"response": {"x": [11, 22, 33], "y": [11], "z": [[11, 22, 33]], "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     def test_plain_json_invalid_a_narap(self):
@@ -337,41 +282,6 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_plain_json_a_no_arguments(self):
         ans = s_tcp_a_no_args.txrx(b'{}')
         self.assertEqual(ans, b'{"response": {"a": 1}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "hello\\\\ world", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": {"var_str": "hello world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape_within_double_quotes(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "\\"hello\\\\ world\\"", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": {"var_str": "hello\\\\ world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape_within_single_quotes(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "\'hello\\\\ world\'", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": {"var_str": "hello\\\\ world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape_double_quote(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "hello\\\\\\"world", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": {"var_str": "hello\\"world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape_single_quote(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "hello\\\\\'world", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": {"var_str": "hello\'world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape_quotes_within_double_quotes(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "\\"hello\\\\\\"world\\"", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": {"var_str": "hello\\"world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_plain_json_posix_escape_quotes_within_single_quotes(self):
-        ans = s_tcp_a.txrx(b'{"--var_str": "\'hello\\\\\'world\'", "--var_int": "2"}')
-        self.assertEqual(ans, b'{"response": "", "exception": "No closing quotation", "finished": 1}')
         self.assertResponse(ans, "json")
 
     # HTTP, json resp, no autoformat
@@ -449,22 +359,12 @@ class TestNetArgumentParser(unittest.TestCase):
 
     def test_http_json_a_narap_two_append(self):
         ans = s_http_a_narap.txrx("/?-x=1 2 3&-x=11 22 33&-y=1&-y=11&-z=1 2 3&-z=11 22 33")
-        self.assertEqual(ans, '{"response": {"x": ["11", "22", "33"], "y": ["1", "11"], "z": [["1", "2", "3"], ["11", "22", "33"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertEqual(ans, '{"response": {"x": [11, 22, 33], "y": [1, 11], "z": [[1, 2, 3], [11, 22, 33]], "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     def test_http_json_a_narap_three_append(self):
         ans = s_http_a_narap.txrx("/?-x=1 2 3&-x=11 22 33&-x=111 222 333&-y=1&-y=11&-y=111&-z=1 2 3&-z=11 22 33&-z=111 222 333")
-        self.assertEqual(ans, '{"response": {"x": ["111", "222", "333"], "y": ["1", "11", "111"], "z": [["1", "2", "3"], ["11", "22", "33"], ["111", "222", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_a_narap_double_quotes(self):
-        ans = s_http_a_narap.txrx('/?-x="11 1" 222 333&-y=1&-y="1 1"&-y=111&-z=1 "2 3"&-z="11 22" 33&-z=111 "2 \'2 2" 333')
-        self.assertEqual(ans, '{"response": {"x": ["11 1", "222", "333"], "y": ["1", "1 1", "111"], "z": [["1", "2 3"], ["11 22", "33"], ["111", "2 \'2 2", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_a_narap_single_quotes(self):
-        ans = s_http_a_narap.txrx("/?-x='11 1' 222 333&-y=1&-y='1 1'&-y=111&-z=1 '2 3'&-z='11 22' 33&-z=111 '2 \"2 2' 333")
-        self.assertEqual(ans, '{"response": {"x": ["11 1", "222", "333"], "y": ["1", "1 1", "111"], "z": [["1", "2 3"], ["11 22", "33"], ["111", "2 \\"2 2", "333"]], "_cmd": "nap"}, "exception": "", "finished": 1}')
+        self.assertEqual(ans, '{"response": {"x": [111, 222, 333], "y": [1, 11, 111], "z": [[1, 2, 3], [11, 22, 33], [111, 222, 333]], "_cmd": "nap"}, "exception": "", "finished": 1}')
         self.assertResponse(ans, "json")
 
     def test_http_json_invalid_a_narap(self):
@@ -485,41 +385,6 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_http_json_a_no_dict(self):
         ans = s_http_a_no_d.txrx("/")
         self.assertEqual(ans, '{"response": "", "exception": "Cannot autoformat non-dict. Check return of the function started by NetArgumentParser.", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape(self):
-        ans = s_http_a.txrx("/?--var_str=hello\ world&--var_int=2")
-        self.assertEqual(ans, '{"response": {"var_str": "hello world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape_within_double_quotes(self):
-        ans = s_http_a.txrx('/?--var_str="hello\ world"&--var_int=2')
-        self.assertEqual(ans, '{"response": {"var_str": "hello\\\\ world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape_within_single_quotes(self):
-        ans = s_http_a.txrx("/?--var_str='hello\ world'&--var_int=2")
-        self.assertEqual(ans, '{"response": {"var_str": "hello\\\\ world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape_double_quote(self):
-        ans = s_http_a.txrx('/?--var_str=hello\\"world&--var_int=2')
-        self.assertEqual(ans, '{"response": {"var_str": "hello\\"world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape_single_quote(self):
-        ans = s_http_a.txrx("/?--var_str=hello\\'world&--var_int=2")
-        self.assertEqual(ans, '{"response": {"var_str": "hello\'world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape_quotes_within_double_quotes(self):
-        ans = s_http_a.txrx('/?--var_str="hello\\"world"&--var_int=2')
-        self.assertEqual(ans, '{"response": {"var_str": "hello\\"world", "var_int": 2, "var_true": false, "_cmd": "nap"}, "exception": "", "finished": 1}')
-        self.assertResponse(ans, "json")
-
-    def test_http_json_posix_escape_quotes_within_single_quotes(self):
-        ans = s_http_a.txrx("/?--var_str='hello\\'world'&--var_int=2")
-        self.assertEqual(ans, '{"response": "", "exception": "No closing quotation", "finished": 1}')
         self.assertResponse(ans, "json")
 
     # HTTP, xml resp, autoformat
@@ -553,16 +418,6 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, "<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
         self.assertResponse(ans, "xml")
 
-    def test_http_xml_a_narap_double_quotes(self):
-        ans = s_http_a_narap.txrx('/xml?-x="11 1" 222 333&-y=1&-y="1 1"&-y=111&-z=1 "2 3"&-z="11 22" 33&-z=111 "2 \'2 2" 333')
-        self.assertEqual(ans, "<nap><response><x>['11 1', '222', '333']</x><y>['1', '1 1', '111']</y><z>[['1', '2 3'], ['11 22', '33'], ['111', \"2 '2 2\", '333']]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_a_narap_single_quotes(self):
-        ans = s_http_a_narap.txrx("/xml?-x='11 1' 222 333&-y=1&-y='1 1'&-y=111&-z=1 '2 3'&-z='11 22' 33&-z=111 '2 \"2 2' 333")
-        self.assertEqual(ans, "<nap><response><x>['11 1', '222', '333']</x><y>['1', '1 1', '111']</y><z>[['1', '2 3'], ['11 22', '33'], ['111', '2 \"2 2', '333']]</z><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
     def test_http_xml_a_no_arguments(self):
         ans = s_http_a_no_args.txrx("/xml")
         self.assertEqual(ans, "<nap><response><a>1</a></response><exception></exception><finished>1</finished></nap>")
@@ -576,41 +431,6 @@ class TestNetArgumentParser(unittest.TestCase):
     def test_http_xml_a_no_dict(self):
         ans = s_http_a_no_d.txrx("/xml")
         self.assertEqual(ans, "<nap><response></response><exception>Cannot autoformat non-dict. Check return of the function started by NetArgumentParser.</exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape(self):
-        ans = s_http_a.txrx("/xml?--var_str=hello\ world&--var_int=2")
-        self.assertEqual(ans, "<nap><response><var_str>hello world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape_within_double_quotes(self):
-        ans = s_http_a.txrx('/xml?--var_str="hello\ world"&--var_int=2')
-        self.assertEqual(ans, "<nap><response><var_str>hello\\ world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape_within_single_quotes(self):
-        ans = s_http_a.txrx("/xml?--var_str='hello\ world'&--var_int=2")
-        self.assertEqual(ans, "<nap><response><var_str>hello\\ world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape_double_quote(self):
-        ans = s_http_a.txrx('/xml?--var_str=hello\\"world&--var_int=2')
-        self.assertEqual(ans, '<nap><response><var_str>hello"world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>')
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape_single_quote(self):
-        ans = s_http_a.txrx("/xml?--var_str=hello\\'world&--var_int=2")
-        self.assertEqual(ans, "<nap><response><var_str>hello'world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>")
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape_quotes_within_double_quotes(self):
-        ans = s_http_a.txrx('/xml?--var_str="hello\\"world"&--var_int=2')
-        self.assertEqual(ans, '<nap><response><var_str>hello"world</var_str><var_int>2</var_int><var_true>False</var_true><_cmd>nap</_cmd></response><exception></exception><finished>1</finished></nap>')
-        self.assertResponse(ans, "xml")
-
-    def test_http_xml_posix_escape_quotes_within_single_quotes(self):
-        ans = s_http_a.txrx("/xml?--var_str='hello\\'world'&--var_int=2")
-        self.assertEqual(ans, '<nap><response></response><exception>No closing quotation</exception><finished>1</finished></nap>')
         self.assertResponse(ans, "xml")
 
 

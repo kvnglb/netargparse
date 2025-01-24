@@ -1,7 +1,7 @@
 # CLI commands
 The script using NetArgumentParser can be run in two modes
 - Standalone (also called main): `python <file> main <arg> <val> <arg1> <val1> ...`
-  The script just behaves like it would when using the ArgumentParser of the standard library argparse.
+  The script just behaves like it would when using the ArgumentParser of the standard library argparse. The handling of arguments is up to the host shell.
 - API (also called nap): `python <file> nap [-h] [-i IP] -p PORT [--http]` with
   ```
   -h, --help            show this help message and exit
@@ -9,7 +9,7 @@ The script using NetArgumentParser can be run in two modes
   -p PORT, --port PORT  Port number where NetArgumentParser listens.
   --http                Use http get requests instead of plain tcp messages.
   ```
-  The script starts listening on a port and waits for a TCP connection to be established. Then, the arguments for the script can be sent either with an HTTP get request or a plain TCP message.
+  The script starts listening on a port and waits for a TCP connection to be established. Then, the arguments for the script can be sent either with an HTTP get request or a plain TCP message. The handling of arguments is POSIX-compliant, independent of the host system.
 
 The standalone mode does not really differ from the default behaviour of the standard ArgumentParser. The following sections therefore only apply to the API mode, unless otherwise stated.
 
@@ -58,7 +58,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
     ```
     Running the script as standalone with `python example1.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example1.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": {}, "exception": "", "finished": 1}`. There is just an empty dictionary in the response because the script adds no entries (at least `return {}` must be returned when `autoformat=True` (default) is used, see below for further details).
 
-2)  To receive a valid response, there are two possibilities
+1)  To receive a valid response, there are two possibilities
     - NetArgumentParser takes care of a valid format in the response section (default `autoformat=True`). The main function must return a dictionary, and its entries will be either converted into a valid json or xml string. The dictionary MUST contain only values of type
       - dictionary,
       - string or
@@ -98,7 +98,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
       ````
       Running the script as above either returns `{"response": Some weird <xml> {"stuff": 10", "exception": "", "finished": 1}` or `<nap><response>Some weird <xml> {"stuff": 10"</response><exception></exception><finished>1</finished></nap>`.
 
-3)  A parser argument with the destination of `_cmd` is not allowed, because it is added by the NetArgumentParser to determine whether the main function is executed as standalone or in API mode.
+1)  A parser argument with the destination of `_cmd` is not allowed, because it is added by the NetArgumentParser to determine whether the main function is executed as standalone or in API mode.
 
     file: `example4.py`
     ```python
@@ -118,11 +118,11 @@ The Python script that uses the NetArgumentParser must follow these rules:
     ````
     When running the script in standalone, it will print the sum in the terminal, whereas in API mode, the terminal stays clean and the return of the main function is just send to the client.
 
-4)  The script using NetArgumentParser must not have arguments with leading underscore.
+1)  The script using NetArgumentParser must not have arguments with leading underscore.
 
     NetArgumentParser replaces leading underscores in receiving xml messages with dashes, e.g. `__x=5` will become `--x=5`. This is because `<nap><--x>5</--x></nap>` is invalid xml syntax but `<nap><__x>5</__x></nap>` is valid. So to pass the argument `--x=5` with xml, a substitution of the leading dashes is required. If the script really needs the argument `-_x=5`... Just don't, because sending `<nap><-_x>5</-_x></nap>` is not possible and `<nap><__x>5</__x></nap>` will result in `--x=5`.
 
-5) Arguments with `nargs="+"` and/or `action="append"` are handled as shown in the table below. Examples can be found in [examples/nargs_append](examples/nargs_append). Strings with whitespaces in between, that should be handled as one argument, must be enclosed in `"` or `'`.
+1) Arguments with `nargs="+"` and/or `action="append"` are handled as shown in the table below. Examples can be found in [examples/nargs_append](examples/nargs_append). Strings with whitespaces in between, that should be handled as one argument, must be enclosed in `"` or `'` or whitespace must be escaped.
 
    |main \ nap|url parameters|json|xml|
    |--|--|--|--|
@@ -130,7 +130,9 @@ The Python script that uses the NetArgumentParser must follow these rules:
    |`-x 1 -x 2 -x 3`|`?-x=1&-x=2&-x=3`|`{"-x": [1, 2, 3]}`|`<nap><_x>1</_x><_x>2</_x><_x>3</_x></nap>`|
    |`-x 1 2 3 -x 11 22 33 -x 111 222 333`|`?-x=1 2 3&-x=11 22 33&-x=111 222 333`|`{"-x": ["1 2 3", "11 22 33", "111 222 333"]}`|`<nap><_x>1 2 3</_x><_x>11 22 33</_x><_x>111 222 333</_x></nap>`|
    |`-x "hello world"`|`?-x="hello world"`|`{"-x": ["'hello world'"]}`|`<nap><_x>"hello world"</_x></nap>`|
+   |posix: `-x hello\ world`|`?-x=hello\ world`|`{"-x": ["hello\\ world"]}`|`<nap><_x>hello\ world</_x></nap>`|
 
    NOTE:
      - Having the same tag multiple times in xml is fine, but having two identical keys in json will drop the first entry. So `{"a": 1, "a": 2}'` will result in `{'a': 2}`.
      - Depending on the software that sends the HTTP request with the url parameters, the special characters may need to be replaced, e.g. whitespace with `%20`. So `?-x=1 2 3` will become `?-x=1%202%203`.
+     - The two backslashes in `{"-x": ["hello\\ world"]}` are needed. When only one `\` was given, the json parser would try to escape the whitespace (that is false). By escaping the escape char, the right string "hello\ world" remains after the json parser has finished and this remaining string is processed correctly.

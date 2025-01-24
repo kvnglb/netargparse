@@ -61,7 +61,7 @@ class NetArgumentParser:
         func
             THE function.
         autoformat
-            True: The return of the function `func` can be a dict or str and is
+            True: The return of the function `func` must be a dict and is
                   automatically formatted to a valid xml or json format as response
                   in nap mode.
             False: The return of the function `func` is handed "as is" as response
@@ -91,19 +91,12 @@ class NetArgumentParser:
             exc = ""
 
             try:
-                args = server.get_msg()
-                if args is False:  # can also be `[]`, so no `not args_s`
+                args_l = server.get_msg()
+                if args_l is False:  # can also be `[]`, so no `not args_l`
                     continue
-                args_l = []
-                for item in args:
-                    val = item.split(" ", 1)
-                    if len(val) == 2 and (val[1].startswith("'") or val[1].startswith('"')):
-                        args_l.extend([val[0], val[1].replace("'", "").replace('"', "")])
-                    else:
-                        args_l.extend(item.split(" "))
-                args_d = self.parser.parse_args(args_l)
-                args_d._cmd = "nap"
-                ans = func(args_d)
+                args = self.parser.parse_args(args_l)
+                args._cmd = "nap"
+                ans = func(args)
             except Exception as e:
                 exc = str(e)
 
