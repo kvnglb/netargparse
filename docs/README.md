@@ -39,7 +39,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
 1)  - One main function, that is called from the NetArgumentParser
     - The main function must take only one argument of type argparse.Namespace
 
-    file: `example1.py`
+    file: `example.py`
     ```python
     from netargparse import NetArgumentParser
 
@@ -56,7 +56,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
     parser.add_argument("-y", type=int, required=True)
     parser(main)
     ```
-    Running the script as standalone with `python example1.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example1.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": {}, "exception": "", "finished": 1}`. There is just an empty dictionary in the response because the script adds no entries (at least `return {}` must be returned when `autoformat=True` (default) is used, see below for further details).
+    Running the script as standalone with `python example.py main -x 5 -y 5` will display the number `10` in the CLI. Running the script with the API `python example.py nap -p 7000 --http`, the script is able to accept its arguments from a HTTP get request, that has the arguments for the script as url parameters. So visiting http://localhost:7000/?-x=5&-y=5 will do the same: `10` in the terminal, where the script was started. The return of the HTTP get request is a json string `{"response": {}, "exception": "", "finished": 1}`. There is just an empty dictionary in the response because the script adds no entries (at least `return {}` must be returned when `autoformat=True` (default) is used, see below for further details).
 
 1)  To receive a valid response, there are two possibilities
     - NetArgumentParser takes care of a valid format in the response section (default `autoformat=True`). The main function must return a dictionary, and its entries will be either converted into a valid json or xml string. The dictionary MUST contain only values of type
@@ -66,7 +66,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
 
       Of course, the values in the dictionary don't have to be of the same type. These rules apply recursively to all nested dictionaries. 
 
-      file: `example2.py`
+      file: `example.py`
       ```python
       from netargparse import NetArgumentParser
 
@@ -83,7 +83,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
 
     - The function itself is responsible for a valid format in the response section (`autoformat=False`). The main function must return a string, that can be anything. The function is responsible for giving a valid json or xml format but can also just send unformatted stuff, where the receiver of this message will have hard times interpreting this message.
 
-      file: `example3.py`
+      file: `example.py`
       ```python
       from netargparse import NetArgumentParser
 
@@ -100,7 +100,7 @@ The Python script that uses the NetArgumentParser must follow these rules:
 
 1)  A parser argument with the destination of `_cmd` is not allowed, because it is added by the NetArgumentParser to determine whether the main function is executed as standalone or in API mode.
 
-    file: `example4.py`
+    file: `example.py`
     ```python
     from netargparse import NetArgumentParser
 
@@ -136,3 +136,33 @@ The Python script that uses the NetArgumentParser must follow these rules:
      - Having the same tag multiple times in xml is fine, but having two identical keys in json will drop the first entry. So `{"a": 1, "a": 2}'` will result in `{'a': 2}`.
      - Depending on the software that sends the HTTP request with the url parameters, the special characters may need to be replaced, e.g. whitespace with `%20`. So `?-x=1 2 3` will become `?-x=1%202%203`.
      - The two backslashes in `{"-x": ["hello\\ world"]}` are needed. When only one `\` was given, the json parser would try to escape the whitespace (that is false). By escaping the escape char, the right string "hello\ world" remains after the json parser has finished and this remaining string is processed correctly.
+
+1) Arguments, that should be independent of main/nap and that should be defined when the Python script is started (and therefore are fixed in that context), must be added to the `meta_parser`. In addition to rule 3), the following destinations for parser arguments must be avoided, because they are reserved for internal use:
+   - `_ip`
+   - `_port`
+   - `_http`
+
+   file: `example.py`
+   ```python
+   from netargparse import NetArgumentParser
+
+   class Bar:
+       def __init__(self, f):
+           self.f = f
+
+       def main(self, args):
+           ret = (args.x + 1) * self.f
+           print(ret)
+           return {"ret": ret}
+
+   parser = NetArgumentParser()
+   parser.meta_parser.add_argument("-f", type=float, required=True)
+   parser.add_argument("-x", type=float, required=True)
+   meta_args = parser.meta_parser.parse_args()
+
+   foo = Bar(meta_args.f)
+   parser(foo.main)
+   ```
+   The script can then be started with e.g. `python example.py -f 2 main/nap...`. For example this is useful, when the script should instantiate a class only once with -- more or less -- fixed parameters. The parameters can be defined by the CLI and the arguments after main or especially that are received in API mode, can be used on the already loaded object. This is a tradeoff between
+   - hard coding the parameters in the script and e.g. instantiate the class with this parameters and
+   - sending semi-fixed parameters as arguments with every API call and therefore re-instantiate the class the same way everytime.

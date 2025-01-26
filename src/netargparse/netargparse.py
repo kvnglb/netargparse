@@ -38,11 +38,11 @@ class NetArgumentParser:
         subparser = self.meta_parser.add_subparsers(dest="_cmd")
 
         nap_parser = subparser.add_parser("nap")
-        nap_parser.add_argument("-i", "--ip", type=str, required=False, default="127.0.0.1",
+        nap_parser.add_argument("-i", "--ip", dest="_ip", type=str, required=False, default="127.0.0.1",
                                 help="IP address where NetArgumentParser listens. Default is 127.0.0.1.")
-        nap_parser.add_argument("-p", "--port", type=int, required=True,
+        nap_parser.add_argument("-p", "--port", dest="_port", type=int, required=True,
                                 help="Port number where NetArgumentParser listens.")
-        nap_parser.add_argument("--http", action="store_true",
+        nap_parser.add_argument("--http", dest="_http", action="store_true",
                                 help="Use http get requests instead of plain tcp messages.")
 
         self.parser = subparser.add_parser("main")
@@ -81,10 +81,10 @@ class NetArgumentParser:
             func(self.args)
             return
 
-        if self.args.http:
-            server = HttpServer(self.args.ip, self.args.port)  # type: t.Union[HttpServer, TcpSocketServer]
+        if self.args._http:
+            server = HttpServer(self.args._ip, self.args._port)  # type: t.Union[HttpServer, TcpSocketServer]
         else:
-            server = TcpSocketServer(self.args.ip, self.args.port)
+            server = TcpSocketServer(self.args._ip, self.args._port)
 
         while True:
             ans = ""  # type: t.Union[dict, str]

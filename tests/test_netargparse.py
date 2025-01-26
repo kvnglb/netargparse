@@ -9,7 +9,19 @@ import xml.etree.ElementTree as ElementTree
 from netargparse import NetArgumentParser
 
 
-port_start = 7300
+port_start = 7000
+
+def tcp_socket_no_autoformat_legacy_add_arg():
+    def main(args):
+        if args.var_str == "damn":
+            return args.var_int / 0
+        return f'"{args}"'
+
+    nap = NetArgumentParser()
+    nap.parser.add_argument("--var_str", type=str)
+    nap.parser.add_argument("--var_int", type=int)
+    nap.parser.add_argument("--var_true", action="store_true")
+    nap(main, False, 0.2, ["nap", "--port", str(port_start)])
 
 def tcp_socket_no_autoformat():
     def main(args):
@@ -21,7 +33,7 @@ def tcp_socket_no_autoformat():
     parser.add_argument("--var_str", type=str)
     parser.add_argument("--var_int", type=int)
     parser.add_argument("--var_true", action="store_true")
-    parser(main, False, 0.2, ["nap", "--port", str(port_start)])
+    parser(main, False, 0.2, ["nap", "--port", str(port_start + 1)])
 
 def tcp_socket_autoformat():
     def main(args):
@@ -33,7 +45,7 @@ def tcp_socket_autoformat():
     parser.add_argument("--var_str", type=str)
     parser.add_argument("--var_int", type=int)
     parser.add_argument("--var_true", action="store_true")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 1)])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 2)])
 
 def tcp_socket_autoformat_nargs_append():
     def main(args):
@@ -43,14 +55,14 @@ def tcp_socket_autoformat_nargs_append():
     parser.add_argument("-x", type=str, nargs="+")
     parser.add_argument("-y", type=str, action="append")
     parser.add_argument("-z", type=str, nargs="+", action="append")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 2)])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 3)])
 
 def tcp_socket_no_args():
     def main(args):
         return {"a": 1}
 
     parser = NetArgumentParser()
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 3)])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 4)])
 
 def http_no_autoformat():
     def main(args):
@@ -62,7 +74,7 @@ def http_no_autoformat():
     parser.add_argument("--var_str", type=str)
     parser.add_argument("--var_int", type=int)
     parser.add_argument("--var_true", action="store_true")
-    parser(main, False, 0.2, ["nap", "--port", str(port_start + 4), "--http"])
+    parser(main, False, 0.2, ["nap", "--port", str(port_start + 5), "--http"])
 
 def http_autoformat():
     def main(args):
@@ -74,7 +86,7 @@ def http_autoformat():
     parser.add_argument("--var_str", type=str)
     parser.add_argument("--var_int", type=int)
     parser.add_argument("--var_true", action="store_true")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 5), "--http"])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 6), "--http"])
 
 def http_autoformat_nargs_append():
     def main(args):
@@ -84,28 +96,47 @@ def http_autoformat_nargs_append():
     parser.add_argument("-x", type=str, nargs="+")
     parser.add_argument("-y", type=str, action="append")
     parser.add_argument("-z", type=str, nargs="+", action="append")
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 6), "--http"])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 7), "--http"])
 
 def http_no_args():
     def main(args):
         return {"a": 1}
 
     parser = NetArgumentParser()
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 7), "--http"])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 8), "--http"])
 
 def http_nested_dict():
     def main(args):
         return {"a": {"b": "b1", "c": {"d": "d1", "e": "e1"}, "f": "f1"}, "g": "g1"}
 
     parser = NetArgumentParser()
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 8), "--http"])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 9), "--http"])
 
 def http_autoformat_no_dict():
     def main(args):
         return "test"
 
     parser = NetArgumentParser()
-    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 9), "--http"])
+    parser(main, resp_delay=0.2, parse_args=["nap", "--port", str(port_start + 10), "--http"])
+
+def http_meta_args():
+    class Bar:
+        def __init__(self, f):
+            self.f = f
+
+        def main(self, args):
+            ret = (args.x + 1) * self.f
+            return {"ret": ret}
+
+    sim_cli_args = ["-f", "3.3", "nap", "--port", str(port_start + 11), "--http"]
+
+    parser = NetArgumentParser()
+    parser.meta_parser.add_argument("-f", type=float, required=True)
+    parser.add_argument("-x", type=float, required=True)
+    meta_args = parser.meta_parser.parse_args(sim_cli_args)
+
+    foo = Bar(meta_args.f)
+    parser(foo.main, resp_delay=0.2, parse_args=sim_cli_args)
 
 
 class TcpSocketRequest:
@@ -139,6 +170,12 @@ class TestNetArgumentParser(unittest.TestCase):
                 raise Exception(f"Wrong resp_type '{resp_type}' given.")
         except Exception as e:
             self.fail(e)
+
+    # Test legacy way of adding arguments to NetArgumentParser
+    def test_legacy_add_argument(self):
+        ans = s_tcp_na_laa.txrx(b"<nap><__var_str>value</__var_str><__var_int>2</__var_int><__var_true></__var_true></nap>")
+        self.assertEqual(ans, b"<nap><response>\"Namespace(var_str='value', var_int=2, var_true=True, _cmd='nap')\"</response><exception></exception><finished>1</finished></nap>")
+        self.assertResponse(ans, "xml")
 
     # Plain xml, no autoformat
     def test_plain_xml_na_valid_tx(self):
@@ -522,6 +559,11 @@ class TestNetArgumentParser(unittest.TestCase):
         self.assertEqual(ans, '{"response": "", "exception": "No closing quotation", "finished": 1}')
         self.assertResponse(ans, "json")
 
+    def test_http_meta_args(self):
+        ans = s_http_ma.txrx("/?-x=5.5")
+        self.assertEqual(ans, '{"response": {"ret": 21.45}, "exception": "", "finished": 1}')
+        self.assertResponse(ans, "json")
+
     # HTTP, xml resp, autoformat
     def test_http_xml_a_valid_tx(self):
         ans = s_http_a.txrx("/xml?--var_str=value&--var_int=2")
@@ -615,35 +657,40 @@ class TestNetArgumentParser(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    for t in [tcp_socket_no_autoformat, tcp_socket_autoformat, tcp_socket_autoformat_nargs_append, tcp_socket_no_args,
-              http_no_autoformat, http_autoformat, http_autoformat_nargs_append, http_no_args, http_nested_dict,
-              http_autoformat_no_dict]:
+    for t in [tcp_socket_no_autoformat_legacy_add_arg, tcp_socket_no_autoformat, tcp_socket_autoformat,
+              tcp_socket_autoformat_nargs_append, tcp_socket_no_args, http_no_autoformat, http_autoformat,
+              http_autoformat_nargs_append, http_no_args, http_nested_dict, http_autoformat_no_dict,
+              http_meta_args]:
         Thread(target=t, daemon=True).start()
 
     for i in range(10):
         if i == 9:
             raise ConnectionRefusedError()
         try:
+            if not "s_tcp_na_laa" in globals():
+                s_tcp_na_laa = TcpSocketRequest(port_start)
             if not "s_tcp_na" in globals():
-                s_tcp_na = TcpSocketRequest(port_start)
+                s_tcp_na = TcpSocketRequest(port_start + 1)
             if not "s_tcp_a" in globals():
-                s_tcp_a = TcpSocketRequest(port_start + 1)
+                s_tcp_a = TcpSocketRequest(port_start + 2)
             if not "s_tcp_a_narap" in globals():
-                s_tcp_a_narap = TcpSocketRequest(port_start + 2)
+                s_tcp_a_narap = TcpSocketRequest(port_start + 3)
             if not "s_tcp_a_no_args" in globals():
-                s_tcp_a_no_args = TcpSocketRequest(port_start + 3)
+                s_tcp_a_no_args = TcpSocketRequest(port_start + 4)
             if not "s_http_na" in globals():
-                s_http_na = HttpRequest(port_start + 4)
+                s_http_na = HttpRequest(port_start + 5)
             if not "s_http_a" in globals():
-                s_http_a = HttpRequest(port_start + 5)
+                s_http_a = HttpRequest(port_start + 6)
             if not "s_http_a_narap" in globals():
-                s_http_a_narap = HttpRequest(port_start + 6)
+                s_http_a_narap = HttpRequest(port_start + 7)
             if not "s_http_a_no_args" in globals():
-                s_http_a_no_args = HttpRequest(port_start + 7)
+                s_http_a_no_args = HttpRequest(port_start + 8)
             if not "s_http_a_nest_d" in globals():
-                s_http_a_nest_d = HttpRequest(port_start + 8)
+                s_http_a_nest_d = HttpRequest(port_start + 9)
             if not "s_http_a_no_d" in globals():
-                s_http_a_no_d = HttpRequest(port_start + 9)
+                s_http_a_no_d = HttpRequest(port_start + 10)
+            if not "s_http_ma" in globals():
+                s_http_ma = HttpRequest(port_start + 11)
             break
         except (ConnectionRefusedError, requests.exceptions.ConnectionError):
             time.sleep(1)
